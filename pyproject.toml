@@ -1,0 +1,51 @@
+[build-system]
+requires = ["h5io", "h5py", "numpy", "pandas", "setuptools", "versioneer[toml]==0.29"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "h5io_browser"
+description = "Easy navigation and data storage for HDF5"
+authors = [
+    { name = "Jan Janssen", email = "janssen@mpie.de" },
+]
+readme = "README.md"
+license = { file = "LICENSE" }
+keywords = ["hdf5", "h5io"]
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Topic :: Scientific/Engineering :: Physics",
+    "License :: OSI Approved :: BSD License",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "h5io==0.1.10",
+    "h5py==3.10.0",
+    "numpy==1.26.2",
+    "pandas==2.1.4",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/pyiron/h5io_browser"
+Documentation = "https://github.com/pyiron/h5io_browser"
+Repository = "https://github.com/pyiron/h5io_browser"
+
+[tool.setuptools.packages.find]
+include = ["h5io_browser*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "h5io_browser.__version__"}
+
+[tool.versioneer]
+VCS = "git"
+style = "pep440-pre"
+versionfile_source = "h5io_browser/_version.py"
+parentdir_prefix = "h5io_browser"
+tag_prefix = "h5io_browser-"
