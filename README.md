@@ -1,4 +1,9 @@
-# h5io_browser - Easy navigation and data storage for HDF5
+# Easy navigation and data storage for HDF5
+
+[![Python package](https://github.com/pyiron/h5io_browser/actions/workflows/unittests.yml/badge.svg)](https://github.com/pyiron/h5io_browser/actions)
+[![Coverage Status](https://coveralls.io/repos/github/pyiron/h5io_browser/badge.svg?branch=main)](https://coveralls.io/github/pyiron/h5io_browser?branch=main)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/pyiron/h5io_browser/main?filepath=notebooks%2Fexample.ipynb)
+
 The [hierarchical data format (HDF)](https://www.hdfgroup.org) is aimed to ensure efficient and equitable access to 
 science and engineering data across platforms and environments. The [h5py](https://www.h5py.org) package provides a 
 pythonic interface to the HDF5 binary data format and the [h5io](https://github.com/h5io/h5io) package simplifies this
