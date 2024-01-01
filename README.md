@@ -2,7 +2,7 @@
 
 [![Python package](https://github.com/pyiron/h5io_browser/actions/workflows/unittests.yml/badge.svg)](https://github.com/pyiron/h5io_browser/actions)
 [![Coverage Status](https://coveralls.io/repos/github/pyiron/h5io_browser/badge.svg?branch=main)](https://coveralls.io/github/pyiron/h5io_browser?branch=main)
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/pyiron/h5io_browser/main?filepath=notebooks%2Fexample.ipynb)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/pyiron/h5io_browser/HEAD?labpath=notebooks%2Fexample.ipynb)
 
 The [hierarchical data format (HDF)](https://www.hdfgroup.org) is aimed to ensure efficient and equitable access to 
 science and engineering data across platforms and environments. The [h5py](https://www.h5py.org) package provides a 
@@ -10,6 +10,8 @@ pythonic interface to the HDF5 binary data format and the [h5io](https://github.
 interface by introducing the `read_hdf5()` and `write_hdf5()` functions for loading and storing python objects in HDF5.
 The [h5io](https://github.com/h5io/h5io) package also provides a `list_file_contents()` function to print the internal,
 structure of an HDF5 file. 
+
+![Preview](h5io_browser.gif)
 
 The `h5io_browser` package extends this interface by providing a pointer `h5io_browser.Pointer` to a specific path 
 inside the hierarchical structure of the HDF5 file. With this pointer, data can be read, stored, copied and deleted from 
