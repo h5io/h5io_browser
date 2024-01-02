@@ -33,9 +33,9 @@ dependencies = [
 dynamic = ["version"]
 
 [project.urls]
-Homepage = "https://github.com/pyiron/h5io_browser"
-Documentation = "https://github.com/pyiron/h5io_browser"
-Repository = "https://github.com/pyiron/h5io_browser"
+Homepage = "https://github.com/h5io/h5io_browser"
+Documentation = "https://github.com/h5io/h5io_browser"
+Repository = "https://github.com/h5io/h5io_browser"
 
 [tool.setuptools.packages.find]
 include = ["h5io_browser*"]
