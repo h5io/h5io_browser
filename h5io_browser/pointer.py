@@ -405,10 +405,7 @@ class Pointer(MutableMapping):
             else:
                 return list(data_dict.values())[-1]
         except (FileNotFoundError, ValueError):
-            if self.file_exists:
-                return self.__class__(file_name=self._file_name, h5_path=h5_path_new)
-            else:
-                return None
+            return self.__class__(file_name=self._file_name, h5_path=h5_path_new)
 
     def __str__(self):
         """
