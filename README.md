@@ -46,13 +46,13 @@ Demonstration of the basic functionality of the `h5io_browser` module.
 ### Import Module
 Start by importing the `h5io_browser` module:
 
-```
+```python
 import h5io_browser as hb
 ```
 
 From the `h5io_browser` module the `Pointer()` object is created to access a new HDF5 file named `new.h5`:
 
-```
+```python
 hp = hb.Pointer(file_name="new.h5")
 ```
 
@@ -66,7 +66,7 @@ For demonstration three different objects are written to the HDF5 file:
 This can either be done using the edge notation, known from accessing python dictionaries, or alternatively using the 
 `write_dict()` function which can store multiple objects in the HDF5 file, while opening it only once.
 
-```
+```python
 hp["data/a_list"] = [1, 2]
 hp.write_dict(data_dict={
     "data/an_integer_number": 3,
@@ -78,21 +78,21 @@ hp.write_dict(data_dict={
 One strength of the `h5io_browser` package is the support for interactive python environments like, Jupyter notebooks. 
 To browse the HDF5 file by executing the `Pointer()` object:
 
-```
+```python
 hp
 ```
 
 In comparison the string representation lists the `file_name`, `h5_path` as well as the `nodes` and `groups` at this 
 `h5_path`:
 
-```
+```python
 str(hp)
 >>> 'Pointer(file_name="/Users/jan/test/new.h5", h5_path="/") {"groups": ["data"], "nodes": []}'
 ```
 
 List content of the HDF5 file at the current `h5_path` using the `list_all()` function: 
 
-```
+```python
 hp.list_all()
 >>> ['data']
 ```
@@ -100,7 +100,7 @@ hp.list_all()
 In analogy the `groups` and `nodes` of any `h5_path` either relative to the current `h5_path` or as absolute `h5_path` 
 can be analysed using the `list_h5_path()`:
 
-```
+```python
 hp.list_h5_path(h5_path="data")
 >>> {'groups': ['sub_path'], 'nodes': ['a_list', 'an_integer_number']}
 ```
@@ -108,14 +108,14 @@ hp.list_h5_path(h5_path="data")
 To continue browsing the HDF5 file the edge bracket notation can be used, just like it s commonly used for python 
 dictionaries to browse the HDF5 file:
 
-```
+```python
 hp["data"].list_all()
 >>> ['a_list', 'an_integer_number', 'sub_path']
 ```
 
 The object which is returned is again a Pointer with the updated `h5_path`, which changed from `/` to `/data`:
 
-```
+```python
 hp.h5_path, hp["data"].h5_path
 >>> ('/', '/data')
 ```
@@ -123,7 +123,7 @@ hp.h5_path, hp["data"].h5_path
 Finally, individual nodes of the HDF5 file can be loaded with the same syntax using the `/` notation known from the 
 file system, or by combining multiple edge brackets:
 
-```
+```python
 hp["data/a_list"], hp["data"]["a_list"]
 >>> ([1, 2], [1, 2])
 ```
@@ -134,7 +134,7 @@ capabilities. By default it returns a flat dictionary with the keys representing
 and the values being the data stored in these nodes. Internally, this loads the whole tree structure, starting from the 
 current `h5_path`, so depending on the size of the HDF5 file this can take quite some time:
 
-```
+```python
 hp.to_dict()
 >>> {'data/a_list': [1, 2],
 >>>  'data/an_integer_number': 3,
@@ -144,7 +144,7 @@ hp.to_dict()
 An alternative representation, is the hierarchical representation which can be enabled by the `hierarchical` being set 
 to `True`. Then the data is represented as a nested dictionary: 
 
-```
+```python
 hp.to_dict(hierarchical=True)
 >>> {'data': {'a_list': [1, 2],
 >>>   'an_integer_number': 3,
@@ -156,7 +156,7 @@ For compatibility with other file access methods, the `h5io_browser` package als
 Still technically this does not change the behavior, even when opened with a with statement the HDF5 file is closed 
 between individual function calls.
 
-```
+```python
 with hb.Pointer(file_name="new.h5") as hp:
     print(hp["data/a_list"])
 >>> [1, 2]
@@ -166,13 +166,13 @@ with hb.Pointer(file_name="new.h5") as hp:
 To delete data from an HDF5 file using the `h5io_browser` the standard python `del` function can be used in analogy to 
 deleting items from a python dictionary. To demonstrate the deletion a new node is added named `data/new/entry/test`:
 
-```
+```python
 hp["data/new/entry/test"] = 4
 ```
 
 To list the node, the `to_dict()` function is used with the `hierarchical` parameter to highlight the nested structure:
 
-```
+```python
 hp["data/new"].to_dict(hierarchical=True)
 >>> {'entry': {'test': 4}}
 ```
@@ -181,7 +181,7 @@ The node is then deleted using the `del` function. While this removes the node f
 same, which is one of the limitations of the HDF5 format. Consequently, it is not recommended to create and remove nodes
 in the HDF5 files frequently: 
 
-```
+```python
 print(hp.file_size())
 del hp["data/new/entry/test"]
 print(hp.file_size())
@@ -191,7 +191,7 @@ print(hp.file_size())
 Even after the deletion of the last node the groups are still included in the HDF5 file. They are not listed by the 
 `to_dict()` function, as it recursively iterates over all nodes below the current `h5_path`:
 
-```
+```python
 hp["data/new"].to_dict(hierarchical=True)
 >>> {}
 ```
@@ -199,20 +199,20 @@ hp["data/new"].to_dict(hierarchical=True)
 Still with the `list_all()` function lists all nodes and groups at a current `h5_path` including empty groups, like the 
 `entry` group in this case: 
 
-```
+```python
 hp["data/new"].list_all()
 >>> ['entry']
 ```
 
 To remove the group from the HDF5 file the same `del` command is used:
 
-```
+```python
 del hp["data/new"]
 ```
 
 After deleting both the newly created groups and their nodes the original hierarchy of the HDF5 file is restored:
 
-```
+```python
 hp.to_dict(hierarchical=True)
 >>> {'data': {'a_list': [1, 2],
 >>>  'an_integer_number': 3,
@@ -221,7 +221,7 @@ hp.to_dict(hierarchical=True)
 
 Still even after deleting the nodes from the HDF5 file, the file size remains the same: 
 
-```
+```python
 hp.file_size()
 >>> 18484
 ```
@@ -230,7 +230,7 @@ hp.file_size()
 To simplify iterating recursively over all nodes contained in the selected `h5_path` the `Pointer()` object can be used 
 as iterator:
 
-```
+```python
 hp_data = hp["data"]
 {h5_path: hp_data[h5_path] for h5_path in hp_data}
 >>> {'a_list': [1, 2],
@@ -243,13 +243,13 @@ In addition to adding, browsing and removing data from an existing HDF5 file, th
 copy data inside a given HDF5 file or copy data from one HDF5 file to another. A new HDF5 file is created, named 
 `copy.h5`:
 
-```
+```python
 hp_copy = hb.Pointer(file_name="copy.h5")
 ```
 
 The data is transferred from the existing `Pointer()` object to the new HDF5 file using the `copy_to()` functions:
 
-```
+```python
 hp["data"].copy_to(hp_copy)
 hp_copy
 ```
