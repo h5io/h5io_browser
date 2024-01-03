@@ -39,7 +39,7 @@ class TestPointer(TestCase):
         self.assertTrue(p.is_empty)
         self.assertFalse(p.file_exists)
         self.assertEqual(p.file_name, os.path.abspath(file_name).replace("\\", "/"))
-        self.assertIsNone(p["test"])
+        self.assertEqual(p["test"].h5_path, "/test")
         self.assertEqual(
             p.list_h5_path(h5_path="wrong/path"), {"nodes": [], "groups": []}
         )
