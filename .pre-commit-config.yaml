@@ -5,6 +5,6 @@ repos:
       - id: ruff
         name: ruff lint
         args: ["--fix"]
-        files: ^h5io/
+        files: ^h5io_browser/
       - id: ruff-format
         name: ruff format
