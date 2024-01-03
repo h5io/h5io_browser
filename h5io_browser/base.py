@@ -3,6 +3,7 @@ import numpy as np
 import h5io
 import h5py
 from itertools import count
+import sys
 import time
 from typing import Callable, TypeVar, Type, Tuple, Optional, Union
 import warnings
@@ -192,6 +193,7 @@ def _write_hdf(
     compression=4,
     slash="error",
     use_json=False,
+    use_state=False,
 ):
     """
     Write data to HDF5 file
@@ -210,6 +212,9 @@ def _write_hdf(
                       in any lower-level keys.
         use_json (bool): To accelerate the read and write performance of small dictionaries and lists they can be
                          combined to JSON objects and stored as strings.
+        use_state (bool): To store objects of unsupported types the __getstate__() method is used to retrieve a
+                          dictionary which defines the state of the object and store the content of this dictionary in
+                          the HDF5 file. (requires python >=3.11)
     """
     file_name = _get_filename_from_filehandle(hdf_filehandle=hdf_filehandle)
     _retry(
@@ -221,6 +226,7 @@ def _write_hdf(
             title=h5_path,
             slash=slash,
             use_json=use_json,
+            use_state=use_state,
         ),
         error=BlockingIOError,
         msg=f"Two or more processes tried to access the file {file_name}.",
@@ -255,6 +261,7 @@ def _write_hdf5_with_json_support(
             compression=compression,
             slash=slash,
             use_json=use_json,
+            use_state=sys.version_info >= (3, 11),
             overwrite="update",
         )
     except TypeError:
