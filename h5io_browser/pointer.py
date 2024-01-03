@@ -315,7 +315,7 @@ class Pointer(MutableMapping):
                 h5_path=self._h5_path,
                 recursive=True,
             )
-        except FileNotFoundError:
+        except (FileNotFoundError, KeyError):
             return {}
         else:
             if self._h5_path == "/":
