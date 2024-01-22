@@ -28,7 +28,7 @@ dependencies = [
     "h5io==0.2.1",
     "h5py==3.10.0",
     "numpy==1.26.3",
-    "pandas==2.1.4",
+    "pandas==2.2.0",
 ]
 dynamic = ["version"]
 
