@@ -1,7 +1,7 @@
 import os
 import h5py
 from unittest import TestCase
-from h5io_browser import Pointer, write_dict_to_hdf
+from h5io_browser import Pointer
 
 
 def get_hdf5_raw_content(file_name):

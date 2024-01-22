@@ -1,9 +1,9 @@
 def get_setup_version_and_pattern(setup_content):
     depend_lst, version_lst = [], []
-    for l in setup_content:
-        if "==" in l:
+    for line in setup_content:
+        if "==" in line:
             lst = (
-                l.split("[")[-1]
+                line.split("[")[-1]
                 .split("]")[0]
                 .replace(" ", "")
                 .replace('"', "")
@@ -22,11 +22,11 @@ def get_setup_version_and_pattern(setup_content):
 def get_env_version(env_content):
     read_flag = False
     depend_lst, version_lst = [], []
-    for l in env_content:
-        if "dependencies:" in l:
+    for line in env_content:
+        if "dependencies:" in line:
             read_flag = True
         elif read_flag:
-            lst = l.replace("-", "").replace(" ", "").replace("\n", "").split("=")
+            lst = line.replace("-", "").replace(" ", "").replace("\n", "").split("=")
             if len(lst) == 2:
                 depend_lst.append(lst[0])
                 version_lst.append(lst[1])
@@ -43,11 +43,11 @@ def update_dependencies(setup_content, version_low_dict, version_high_dict):
 
     setup_content_new = ""
     pattern_dict = {d: d + "==" + v for d, v in version_high_dict.items()}
-    for l in setup_content:
+    for line in setup_content:
         for k, v in pattern_dict.items():
-            if v in l:
-                l = l.replace(v, version_combo_dict[k])
-        setup_content_new += l
+            if v in line:
+                line = line.replace(v, version_combo_dict[k])
+        setup_content_new += line
     return setup_content_new
 
 
