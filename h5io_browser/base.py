@@ -266,7 +266,7 @@ def _write_hdf5_with_json_support(
         )
     except TypeError:
         raise TypeError(
-            "Error saving {} (key {}): DataContainer doesn't support saving elements "
+            "Error saving {} (key {}): h5io_browser doesn't support saving elements "
             'of type "{}" to HDF!'.format(value, h5_path, type(value))
         ) from None
 
