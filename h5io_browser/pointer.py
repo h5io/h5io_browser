@@ -22,9 +22,9 @@ def convert_dict_items_to_str(input_dict):
               levels of the hierarchy.
     """
     return {
-        str(k): convert_dict_items_to_str(input_dict=v)
-        if isinstance(v, dict)
-        else str(v)
+        str(k): (
+            convert_dict_items_to_str(input_dict=v) if isinstance(v, dict) else str(v)
+        )
         for k, v in input_dict.items()
     }
 
@@ -193,8 +193,10 @@ class Pointer(MutableMapping):
                     pass  # In case the copy_to() function failed previously and the group already exists.
 
             if target_path == "/":
-                source.copy(target_path, "/") if source == target else source.copy(
-                    target_path, target
+                (
+                    source.copy(target_path, "/")
+                    if source == target
+                    else source.copy(target_path, target)
                 )
             else:
                 if maintain_flag:
