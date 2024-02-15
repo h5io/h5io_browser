@@ -250,10 +250,10 @@ class TestBaseHierachical(TestCase):
         nodes, groups = list_hdf(file_name=self.file_name, h5_path="/data_hierarchical")
         self.assertEqual(groups, ["/data_hierarchical/c"])
         self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b"])
-        with self.assertRaises(TypeError):
-            write_dict_to_hdf(
-                file_name=self.file_name, data_dict={"/data_hierarchical/j": ValueError}
-            )
+        write_dict_to_hdf(
+            file_name=self.file_name, data_dict={"/data_hierarchical/j": ValueError}
+        )
+        self.assertEqual(ValueError, ["/data_hierarchical/c"])
 
 
 class TestBaseJSON(TestCase):
