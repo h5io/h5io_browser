@@ -253,9 +253,10 @@ class TestBaseHierachical(TestCase):
         write_dict_to_hdf(
             file_name=self.file_name, data_dict={"/data_hierarchical/j": ValueError}
         )
-        self.assertEqual(ValueError, _read_hdf(
-            hdf_filehandle=hdf, h5_path="/data_hierarchical/j", slash="ignore"
-        ))
+        with h5py.File(self.file_name, "r") as hdf:
+            self.assertEqual(ValueError, _read_hdf(
+                hdf_filehandle=hdf, h5_path="/data_hierarchical/j", slash="ignore"
+            ))
 
 
 class TestBaseJSON(TestCase):
