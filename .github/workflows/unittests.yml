@@ -62,6 +62,7 @@ jobs:
         pip install versioneer[toml]==0.29
         pip install . --no-deps --no-build-isolation
         coverage run --omit h5io_browser/_version.py -m unittest discover tests
+        coverage xml
     - name: Coveralls
       if: matrix.label == 'linux-64-py-3-12'
       uses: coverallsapp/github-action@v2
