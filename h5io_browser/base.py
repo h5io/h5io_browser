@@ -100,7 +100,7 @@ def read_dict_from_hdf(
                     return_dict = _merge_nested_dict(
                         main_dict=return_dict,
                         add_dict=_get_nested_dict_item(
-                            key=n[1:],
+                            key=n,
                             value=_read_hdf(hdf_filehandle=hdf, h5_path=n, slash=slash),
                         ),
                     )
@@ -172,6 +172,8 @@ def _get_nested_dict_item(key, value):
         dict: hierarchical dictionary
     """
     groups = key.split("/")
+    if groups[0] == "":
+        del groups[0]
     nested_dict = value
     for g in groups[::-1]:
         nested_dict = {g: nested_dict}
