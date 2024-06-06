@@ -2,6 +2,7 @@ import os
 import numpy as np
 import h5py
 from unittest import TestCase
+import posixpath
 from h5io_browser import (
     delete_item,
     list_hdf,
@@ -88,6 +89,15 @@ class TestBaseHierachical(TestCase):
             read_dict_from_hdf(
                 file_name=self.file_name,
                 h5_path="/",
+                recursive=True,
+                nested=True,
+            ),
+        )
+        self.assertEqual(
+            {"d": 4, "e": 5},
+            read_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=posixpath.join(self.h5_path, "c"),
                 recursive=True,
                 nested=True,
             ),
