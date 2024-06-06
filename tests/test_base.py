@@ -136,7 +136,7 @@ class TestBaseHierachical(TestCase):
             ),
         )
         self.assertEqual(
-            {'a': [1, 2], 'b': 3},
+            {"a": [1, 2], "b": 3},
             read_dict_from_hdf(
                 file_name=self.file_name,
                 h5_path=self.h5_path,
@@ -145,7 +145,7 @@ class TestBaseHierachical(TestCase):
             ),
         )
         self.assertEqual(
-            {'a': [1, 2]},
+            {"a": [1, 2]},
             read_dict_from_hdf(
                 file_name=self.file_name,
                 h5_path=posixpath.join(self.h5_path, "a"),
@@ -154,7 +154,7 @@ class TestBaseHierachical(TestCase):
             ),
         )
         self.assertEqual(
-            {'b': 3},
+            {"b": 3},
             read_dict_from_hdf(
                 file_name=self.file_name,
                 h5_path=posixpath.join(self.h5_path, "b"),
