@@ -2,10 +2,12 @@ import os
 import numpy as np
 import h5py
 from unittest import TestCase
+import posixpath
 from h5io_browser import (
     delete_item,
     list_hdf,
     read_dict_from_hdf,
+    read_nested_dict_from_hdf,
     write_dict_to_hdf,
 )
 from h5io_browser.base import _get_hdf_content, _is_ragged_in_1st_dim_only, _read_hdf
@@ -75,15 +77,6 @@ class TestBaseHierachical(TestCase):
             ),
         )
         self.assertEqual(
-            {"data_hierarchical": {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}}},
-            read_dict_from_hdf(
-                file_name=self.file_name,
-                h5_path=self.h5_path,
-                recursive=True,
-                nested=True,
-            ),
-        )
-        self.assertEqual(
             self.data_hierarchical,
             read_dict_from_hdf(
                 file_name=self.file_name, h5_path=self.h5_path, recursive=1
@@ -97,19 +90,71 @@ class TestBaseHierachical(TestCase):
                 if "/data_hierarchical/c" in k
             },
             read_dict_from_hdf(
-                file_name=self.file_name, h5_path="/data_hierarchical/c", recursive=True
+                file_name=self.file_name,
+                h5_path=posixpath.join(self.h5_path, "c"),
+                recursive=True,
             ),
         )
         self.assertEqual(
             {"/data_hierarchical/a": [1, 2]},
             read_dict_from_hdf(
-                file_name=self.file_name, h5_path="/data_hierarchical/a"
+                file_name=self.file_name, h5_path=posixpath.join(self.h5_path, "a")
             ),
         )
         self.assertEqual(
             {"/data_hierarchical/b": 3},
             read_dict_from_hdf(
-                file_name=self.file_name, h5_path="/data_hierarchical/b"
+                file_name=self.file_name, h5_path=posixpath.join(self.h5_path, "b")
+            ),
+        )
+
+    def test_read_nested_dict_hierarchical(self):
+        self.assertEqual(
+            {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}},
+            read_nested_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=self.h5_path,
+                recursive=True,
+            ),
+        )
+        self.assertEqual(
+            {"data_hierarchical": {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}}},
+            read_nested_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path="/",
+                recursive=True,
+            ),
+        )
+        self.assertEqual(
+            {"d": 4, "e": 5},
+            read_nested_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=posixpath.join(self.h5_path, "c"),
+                recursive=True,
+            ),
+        )
+        self.assertEqual(
+            {'a': [1, 2], 'b': 3},
+            read_nested_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=self.h5_path,
+                recursive=False,
+            ),
+        )
+        self.assertEqual(
+            {'a': [1, 2]},
+            read_nested_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=posixpath.join(self.h5_path, "a"),
+                recursive=False,
+            ),
+        )
+        self.assertEqual(
+            {'b': 3},
+            read_nested_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=posixpath.join(self.h5_path, "b"),
+                recursive=False,
             ),
         )
 
@@ -117,7 +162,7 @@ class TestBaseHierachical(TestCase):
         self.assertEqual(
             _read_hdf(
                 hdf_filehandle=self.file_name,
-                h5_path="/data_hierarchical/b",
+                h5_path=posixpath.join(self.h5_path, "b"),
                 slash="ignore",
             ),
             3,
@@ -125,14 +170,18 @@ class TestBaseHierachical(TestCase):
         with h5py.File(self.file_name, "r") as hdf:
             self.assertEqual(
                 _read_hdf(
-                    hdf_filehandle=hdf, h5_path="/data_hierarchical/b", slash="ignore"
+                    hdf_filehandle=hdf,
+                    h5_path=posixpath.join(self.h5_path, "b"),
+                    slash="ignore",
                 ),
                 3,
             )
         with self.assertRaises(TypeError):
             self.assertEqual(
                 _read_hdf(
-                    hdf_filehandle=1, h5_path="/data_hierarchical/b", slash="ignore"
+                    hdf_filehandle=1,
+                    h5_path=posixpath.join(self.h5_path, "b"),
+                    slash="ignore",
                 ),
                 3,
             )
@@ -151,13 +200,13 @@ class TestBaseHierachical(TestCase):
         )
 
     def test_list_groups(self):
-        nodes, groups = list_hdf(file_name=self.file_name, h5_path="/data_hierarchical")
+        nodes, groups = list_hdf(file_name=self.file_name, h5_path=self.h5_path)
         self.assertEqual(groups, ["/data_hierarchical/c"])
         self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b"])
         nodes, groups = list_hdf(file_name=self.file_name, h5_path="/wrong_path")
         self.assertEqual(nodes, [])
         self.assertEqual(groups, [])
-        nodes, groups = list_hdf(file_name="empty.h5", h5_path="/data_hierarchical")
+        nodes, groups = list_hdf(file_name="empty.h5", h5_path=self.h5_path)
         self.assertEqual(nodes, [])
         self.assertEqual(groups, [])
         nodes, groups = list_hdf(file_name=self.file_name, h5_path="/")
@@ -178,7 +227,7 @@ class TestBaseHierachical(TestCase):
             ],
         )
         nodes, groups = list_hdf(
-            file_name=self.file_name, h5_path="/data_hierarchical", recursive=True
+            file_name=self.file_name, h5_path=self.h5_path, recursive=True
         )
         self.assertEqual(groups, ["/data_hierarchical/c"])
         self.assertEqual(
@@ -191,7 +240,9 @@ class TestBaseHierachical(TestCase):
             ],
         )
         nodes, groups = list_hdf(
-            file_name=self.file_name, h5_path="/data_hierarchical/a", recursive=True
+            file_name=self.file_name,
+            h5_path=posixpath.join(self.h5_path, "a"),
+            recursive=True,
         )
         self.assertEqual(groups, [])
         self.assertEqual(nodes, [])
@@ -226,47 +277,51 @@ class TestBaseHierachical(TestCase):
             self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b"])
 
     def test_delete(self):
-        delete_item(file_name=self.file_name, h5_path="/data_hierarchical/c")
-        nodes, groups = list_hdf(file_name=self.file_name, h5_path="/data_hierarchical")
+        delete_item(file_name=self.file_name, h5_path=posixpath.join(self.h5_path, "c"))
+        nodes, groups = list_hdf(file_name=self.file_name, h5_path=self.h5_path)
         self.assertEqual(groups, [])
         self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b"])
         delete_item(file_name=self.file_name, h5_path="/data_hierarchical/a")
         nodes, groups = list_hdf(file_name=self.file_name, h5_path="/data_hierarchical")
         self.assertEqual(groups, [])
         self.assertEqual(nodes, ["/data_hierarchical/b"])
-        delete_item(file_name=self.file_name, h5_path="/data_hierarchical/d")
-        delete_item(file_name="empty.h5", h5_path="/data_hierarchical/c")
+        delete_item(file_name=self.file_name, h5_path=posixpath.join(self.h5_path, "d"))
+        delete_item(file_name="empty.h5", h5_path=posixpath.join(self.h5_path, "c"))
 
     def test_write_dict_to_hdf(self):
-        nodes, groups = list_hdf(file_name=self.file_name, h5_path="/data_hierarchical")
+        nodes, groups = list_hdf(file_name=self.file_name, h5_path=self.h5_path)
         self.assertEqual(groups, ["/data_hierarchical/c"])
         self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b"])
         write_dict_to_hdf(
             file_name=self.file_name,
-            data_dict={"/data_hierarchical/f": {"g": 6, "h": 7}},
+            data_dict={posixpath.join(self.h5_path, "f"): {"g": 6, "h": 7}},
         )
         write_dict_to_hdf(
-            file_name=self.file_name, data_dict={"/data_hierarchical/i/l": 4}
+            file_name=self.file_name,
+            data_dict={posixpath.join(self.h5_path, "i", "l"): 4},
         )
-        nodes, groups = list_hdf(file_name=self.file_name, h5_path="/data_hierarchical")
+        nodes, groups = list_hdf(file_name=self.file_name, h5_path=self.h5_path)
         self.assertEqual(groups, ["/data_hierarchical/c", "/data_hierarchical/i"])
         self.assertEqual(
             nodes,
             ["/data_hierarchical/a", "/data_hierarchical/b", "/data_hierarchical/f"],
         )
-        delete_item(file_name=self.file_name, h5_path="/data_hierarchical/i")
-        delete_item(file_name=self.file_name, h5_path="/data_hierarchical/f")
-        nodes, groups = list_hdf(file_name=self.file_name, h5_path="/data_hierarchical")
+        delete_item(file_name=self.file_name, h5_path=posixpath.join(self.h5_path, "i"))
+        delete_item(file_name=self.file_name, h5_path=posixpath.join(self.h5_path, "f"))
+        nodes, groups = list_hdf(file_name=self.file_name, h5_path=self.h5_path)
         self.assertEqual(groups, ["/data_hierarchical/c"])
         self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b"])
         write_dict_to_hdf(
-            file_name=self.file_name, data_dict={"/data_hierarchical/j": ValueError}
+            file_name=self.file_name,
+            data_dict={posixpath.join(self.h5_path, "j"): ValueError},
         )
         with h5py.File(self.file_name, "r") as hdf:
             self.assertEqual(
                 ValueError,
                 _read_hdf(
-                    hdf_filehandle=hdf, h5_path="/data_hierarchical/j", slash="ignore"
+                    hdf_filehandle=hdf,
+                    h5_path=posixpath.join(self.h5_path, "j"),
+                    slash="ignore",
                 ),
             )
 
