@@ -63,7 +63,9 @@ def list_hdf(file_name, h5_path, recursive=False):
         return [], []
 
 
-def read_dict_from_hdf(file_name, h5_path, recursive=False, nested=False, slash="ignore"):
+def read_dict_from_hdf(
+    file_name, h5_path, recursive=False, nested=False, slash="ignore"
+):
     """
     Read data from HDF5 file into a dictionary - by default only the nodes are converted to dictionaries, additional
     sub groups can be specified using the group_paths parameter.
@@ -99,8 +101,8 @@ def read_dict_from_hdf(file_name, h5_path, recursive=False, nested=False, slash=
                         main_dict=return_dict,
                         add_dict=_get_nested_dict_item(
                             key=n[1:],
-                            value=_read_hdf(hdf_filehandle=hdf, h5_path=n, slash=slash)
-                        )
+                            value=_read_hdf(hdf_filehandle=hdf, h5_path=n, slash=slash),
+                        ),
                     )
                 return return_dict
         else:
