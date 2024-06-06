@@ -173,7 +173,7 @@ def _get_nested_dict_item(key, value, h5_path):
     Returns:
         dict: hierarchical dictionary
     """
-    groups = key[len(h5_path):].split("/")
+    groups = key[len(h5_path) :].split("/")
     if len(groups) > 1 and groups[0] == "":
         del groups[0]
     nested_dict = value
