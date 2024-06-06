@@ -3,6 +3,7 @@ import numpy as np
 import h5io
 import h5py
 from itertools import count
+import posixpath
 import sys
 import time
 from typing import Callable, TypeVar, Type, Tuple, Optional, Union
@@ -63,23 +64,21 @@ def list_hdf(file_name, h5_path, recursive=False):
         return [], []
 
 
-def read_dict_from_hdf(
-    file_name, h5_path, recursive=False, nested=False, slash="ignore"
-):
+def read_dict_from_hdf(file_name, h5_path, recursive=False, slash="ignore"):
     """
     Read data from HDF5 file into a dictionary - by default only the nodes are converted to dictionaries, additional
-    sub groups can be specified using the group_paths parameter.
+    sub groups can be converted using the recursive parameter.
 
     Args:
        file_name (str): Name of the file on disk
        h5_path (str): Path to a group in the HDF5 file from where the data is read
        recursive (bool/int): Recursively browse through the HDF5 file, either a boolean flag or an integer
                               which specifies the level of recursion.
-       nested (bool): Convert the hierarchical paths in the HDF5 file to a nested dictionary (default: False)
        slash (str): 'ignore' | 'replace' Whether to replace the string {FWDSLASH} with the value /. This does
                     not apply to the top level name (title). If 'ignore', nothing will be replaced.
     Returns:
-       dict:     The loaded data. Can be of any type supported by ``write_hdf5``.
+       dict: The loaded data as dictionary, with the keys being the path inside the HDF5 file. The values can be of
+             any type supported by ``write_hdf5``.
     """
     with h5py.File(file_name, "r") as hdf:
         if recursive:
@@ -89,22 +88,61 @@ def read_dict_from_hdf(
         else:
             nodes_lst = [h5_path]
         if len(nodes_lst) > 0 and nodes_lst[0] != "/":
-            if not nested:
-                return {
-                    n: _read_hdf(hdf_filehandle=hdf, h5_path=n, slash=slash)
-                    for n in nodes_lst
-                }
-            else:
-                return_dict = {}
-                for n in nodes_lst:
-                    return_dict = _merge_nested_dict(
-                        main_dict=return_dict,
-                        add_dict=_get_nested_dict_item(
-                            key=n,
-                            value=_read_hdf(hdf_filehandle=hdf, h5_path=n, slash=slash),
-                        ),
-                    )
-                return return_dict
+            return {
+                n: _read_hdf(hdf_filehandle=hdf, h5_path=n, slash=slash)
+                for n in nodes_lst
+            }
+        else:
+            return {}
+
+
+def read_nested_dict_from_hdf(
+    file_name, h5_path, group_paths=[], recursive=False, slash="ignore"
+):
+    """
+    Read data from HDF5 file into a dictionary - by default only the nodes are converted to dictionaries, additional
+    sub groups can be specified either using the group_paths parameter or using the recursive parameter.
+
+    Args:
+       file_name (str): Name of the file on disk
+       h5_path (str): Path to a group in the HDF5 file from where the data is read
+       group_paths (list): list of additional groups to be included in the dictionary, for example:
+                           ["input", "output", "output/generic"]
+                           These groups are defined relative to the h5_path.
+       recursive (bool/int): Recursively browse through the HDF5 file, either a boolean flag or an integer
+                              which specifies the level of recursion.
+       slash (str): 'ignore' | 'replace' Whether to replace the string {FWDSLASH} with the value /. This does
+                    not apply to the top level name (title). If 'ignore', nothing will be replaced.
+    Returns:
+       dict:     The loaded data as nested dictionary. Can be of any type supported by ``write_hdf5``.
+    """
+    if h5_path[0] != "/":
+        h5_path = "/" + h5_path
+    with h5py.File(file_name, "r") as hdf:
+        nodes_lst = _get_hdf_content(
+            hdf=hdf[h5_path], recursive=recursive, only_nodes=True
+        )
+        if not recursive and len(nodes_lst) == 0 and h5_path != "/":
+            nodes_lst += [h5_path]
+        if len(group_paths) > 0:
+            for group in group_paths:
+                nodes_lst += _get_hdf_content(
+                    hdf=hdf[posixpath.join(h5_path, group)],
+                    recursive=recursive,
+                    only_nodes=True,
+                )
+        if len(nodes_lst) > 0:
+            return_dict = {}
+            for n in nodes_lst:
+                return_dict = _merge_nested_dict(
+                    main_dict=return_dict,
+                    add_dict=_get_nested_dict_item(
+                        key=n,
+                        value=_read_hdf(hdf_filehandle=hdf, h5_path=n, slash=slash),
+                        h5_path=h5_path,
+                    ),
+                )
+            return return_dict
         else:
             return {}
 
@@ -160,24 +198,28 @@ def _get_filename_from_filehandle(hdf_filehandle):
     return file_name
 
 
-def _get_nested_dict_item(key, value):
+def _get_nested_dict_item(key, value, h5_path=""):
     """
     Turns a dict with a key containing slashes into a nested dict.  {'/a/b/c': 1} -> {'a': {'b': {'c': 1}
 
     Args:
         key (str): path inside the HDF5 file the data_dictionary was loaded from
         value (object): value of the dictionary item
+        h5_path (str): group path inside the HDF5 file
 
     Returns:
         dict: hierarchical dictionary
     """
-    groups = key.split("/")
-    if groups[0] == "":
+    groups = key[len(h5_path) :].split("/")
+    if len(groups) > 0 and groups[0] == "":
         del groups[0]
     nested_dict = value
-    for g in groups[::-1]:
-        nested_dict = {g: nested_dict}
-    return nested_dict
+    if len(groups) > 0:
+        for g in groups[::-1]:
+            nested_dict = {g: nested_dict}
+        return nested_dict
+    else:
+        return {key.split("/")[-1]: nested_dict}
 
 
 def _merge_nested_dict(main_dict, add_dict):
