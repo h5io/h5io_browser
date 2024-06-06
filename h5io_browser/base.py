@@ -67,7 +67,7 @@ def list_hdf(file_name, h5_path, recursive=False):
 def read_dict_from_hdf(file_name, h5_path, recursive=False, slash="ignore"):
     """
     Read data from HDF5 file into a dictionary - by default only the nodes are converted to dictionaries, additional
-    sub groups can be specified using the group_paths parameter.
+    sub groups can be converted using the recursive parameter.
 
     Args:
        file_name (str): Name of the file on disk
@@ -77,7 +77,8 @@ def read_dict_from_hdf(file_name, h5_path, recursive=False, slash="ignore"):
        slash (str): 'ignore' | 'replace' Whether to replace the string {FWDSLASH} with the value /. This does
                     not apply to the top level name (title). If 'ignore', nothing will be replaced.
     Returns:
-       dict:     The loaded data. Can be of any type supported by ``write_hdf5``.
+       dict: The loaded data as dictionary, with the keys being the path inside the HDF5 file. The values can be of
+             any type supported by ``write_hdf5``.
     """
     with h5py.File(file_name, "r") as hdf:
         if recursive:
@@ -100,7 +101,7 @@ def read_nested_dict_from_hdf(
 ):
     """
     Read data from HDF5 file into a dictionary - by default only the nodes are converted to dictionaries, additional
-    sub groups can be specified using the group_paths parameter.
+    sub groups can be specified either using the group_paths parameter or using the recursive parameter.
 
     Args:
        file_name (str): Name of the file on disk
@@ -113,7 +114,7 @@ def read_nested_dict_from_hdf(
        slash (str): 'ignore' | 'replace' Whether to replace the string {FWDSLASH} with the value /. This does
                     not apply to the top level name (title). If 'ignore', nothing will be replaced.
     Returns:
-       dict:     The loaded data. Can be of any type supported by ``write_hdf5``.
+       dict:     The loaded data as nested dictionary. Can be of any type supported by ``write_hdf5``.
     """
     if h5_path[0] != "/":
         h5_path = "/" + h5_path
