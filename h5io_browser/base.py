@@ -82,12 +82,11 @@ def read_dict_from_hdf(
        dict:     The loaded data. Can be of any type supported by ``write_hdf5``.
     """
     with h5py.File(file_name, "r") as hdf:
-        if recursive:
-            nodes_lst = _get_hdf_content(
-                hdf=hdf[h5_path], recursive=recursive, only_nodes=True
-            )
-        else:
-            nodes_lst = [h5_path]
+        nodes_lst = _get_hdf_content(
+            hdf=hdf[h5_path], recursive=recursive, only_nodes=True
+        )
+        if not recursive and len(nodes_lst) == 0:
+            nodes_lst += [h5_path]
         if len(nodes_lst) > 0 and nodes_lst[0] != "/":
             if not nested:
                 return {
@@ -174,12 +173,15 @@ def _get_nested_dict_item(key, value, h5_path):
         dict: hierarchical dictionary
     """
     groups = key[len(h5_path) :].split("/")
-    if len(groups) > 1 and groups[0] == "":
+    if len(groups) > 0 and groups[0] == "":
         del groups[0]
     nested_dict = value
-    for g in groups[::-1]:
-        nested_dict = {g: nested_dict}
-    return nested_dict
+    if len(groups) > 0:
+        for g in groups[::-1]:
+            nested_dict = {g: nested_dict}
+        return nested_dict
+    else:
+        return {key.split("/")[-1]: nested_dict}
 
 
 def _merge_nested_dict(main_dict, add_dict):
