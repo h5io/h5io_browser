@@ -102,6 +102,7 @@ def read_dict_from_hdf(
                         add_dict=_get_nested_dict_item(
                             key=n,
                             value=_read_hdf(hdf_filehandle=hdf, h5_path=n, slash=slash),
+                            h5_path=h5_path,
                         ),
                     )
                 return return_dict
@@ -160,19 +161,20 @@ def _get_filename_from_filehandle(hdf_filehandle):
     return file_name
 
 
-def _get_nested_dict_item(key, value):
+def _get_nested_dict_item(key, value, h5_path):
     """
     Turns a dict with a key containing slashes into a nested dict.  {'/a/b/c': 1} -> {'a': {'b': {'c': 1}
 
     Args:
         key (str): path inside the HDF5 file the data_dictionary was loaded from
         value (object): value of the dictionary item
+        h5_path (str): group path inside the HDF5 file
 
     Returns:
         dict: hierarchical dictionary
     """
-    groups = key.split("/")
-    if groups[0] == "":
+    groups = key[len(h5_path):].split("/")
+    if len(groups) > 1 and groups[0] == "":
         del groups[0]
     nested_dict = value
     for g in groups[::-1]:
