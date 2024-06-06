@@ -63,7 +63,9 @@ def list_hdf(file_name, h5_path, recursive=False):
         return [], []
 
 
-def read_dict_from_hdf(file_name, h5_path, recursive=False, slash="ignore"):
+def read_dict_from_hdf(
+    file_name, h5_path, recursive=False, nested=False, slash="ignore"
+):
     """
     Read data from HDF5 file into a dictionary - by default only the nodes are converted to dictionaries, additional
     sub groups can be specified using the group_paths parameter.
@@ -73,6 +75,7 @@ def read_dict_from_hdf(file_name, h5_path, recursive=False, slash="ignore"):
        h5_path (str): Path to a group in the HDF5 file from where the data is read
        recursive (bool/int): Recursively browse through the HDF5 file, either a boolean flag or an integer
                               which specifies the level of recursion.
+       nested (bool): Convert the hierarchical paths in the HDF5 file to a nested dictionary (default: False)
        slash (str): 'ignore' | 'replace' Whether to replace the string {FWDSLASH} with the value /. This does
                     not apply to the top level name (title). If 'ignore', nothing will be replaced.
     Returns:
@@ -86,10 +89,22 @@ def read_dict_from_hdf(file_name, h5_path, recursive=False, slash="ignore"):
         else:
             nodes_lst = [h5_path]
         if len(nodes_lst) > 0 and nodes_lst[0] != "/":
-            return {
-                n: _read_hdf(hdf_filehandle=hdf, h5_path=n, slash=slash)
-                for n in nodes_lst
-            }
+            if not nested:
+                return {
+                    n: _read_hdf(hdf_filehandle=hdf, h5_path=n, slash=slash)
+                    for n in nodes_lst
+                }
+            else:
+                return_dict = {}
+                for n in nodes_lst:
+                    return_dict = _merge_nested_dict(
+                        main_dict=return_dict,
+                        add_dict=_get_nested_dict_item(
+                            key=n[1:],
+                            value=_read_hdf(hdf_filehandle=hdf, h5_path=n, slash=slash),
+                        ),
+                    )
+                return return_dict
         else:
             return {}
 
@@ -143,6 +158,43 @@ def _get_filename_from_filehandle(hdf_filehandle):
             type(hdf_filehandle),
         )
     return file_name
+
+
+def _get_nested_dict_item(key, value):
+    """
+    Turns a dict with a key containing slashes into a nested dict.  {'/a/b/c': 1} -> {'a': {'b': {'c': 1}
+
+    Args:
+        key (str): path inside the HDF5 file the data_dictionary was loaded from
+        value (object): value of the dictionary item
+
+    Returns:
+        dict: hierarchical dictionary
+    """
+    groups = key.split("/")
+    nested_dict = value
+    for g in groups[::-1]:
+        nested_dict = {g: nested_dict}
+    return nested_dict
+
+
+def _merge_nested_dict(main_dict, add_dict):
+    """
+    Merge two dictionaries recursively
+
+    Args:
+        main_dict (dict): The primary dictionary, the secondary dictionary is merged into
+        add_dict (dict): The secondary dictionary which is merged in the primary dictionary
+
+    Returns:
+        dict: The merged dictionary with all keys
+    """
+    for k, v in add_dict.items():
+        if k in main_dict.keys() and isinstance(v, dict):
+            main_dict[k] = _merge_nested_dict(main_dict=main_dict[k], add_dict=v)
+        else:
+            main_dict[k] = v
+    return main_dict
 
 
 def _open_hdf(filename, mode="r", swmr=False):
