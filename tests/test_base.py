@@ -116,7 +116,9 @@ class TestBaseHierachical(TestCase):
                 if "/data_hierarchical/c" in k
             },
             read_dict_from_hdf(
-                file_name=self.file_name, h5_path=posixpath.join(self.h5_path, "c"), recursive=True
+                file_name=self.file_name,
+                h5_path=posixpath.join(self.h5_path, "c"),
+                recursive=True,
             ),
         )
         self.assertEqual(
@@ -144,14 +146,18 @@ class TestBaseHierachical(TestCase):
         with h5py.File(self.file_name, "r") as hdf:
             self.assertEqual(
                 _read_hdf(
-                    hdf_filehandle=hdf, h5_path=posixpath.join(self.h5_path, "b"), slash="ignore"
+                    hdf_filehandle=hdf,
+                    h5_path=posixpath.join(self.h5_path, "b"),
+                    slash="ignore",
                 ),
                 3,
             )
         with self.assertRaises(TypeError):
             self.assertEqual(
                 _read_hdf(
-                    hdf_filehandle=1, h5_path=posixpath.join(self.h5_path, "b"), slash="ignore"
+                    hdf_filehandle=1,
+                    h5_path=posixpath.join(self.h5_path, "b"),
+                    slash="ignore",
                 ),
                 3,
             )
@@ -210,7 +216,9 @@ class TestBaseHierachical(TestCase):
             ],
         )
         nodes, groups = list_hdf(
-            file_name=self.file_name, h5_path=posixpath.join(self.h5_path, "a"), recursive=True
+            file_name=self.file_name,
+            h5_path=posixpath.join(self.h5_path, "a"),
+            recursive=True,
         )
         self.assertEqual(groups, [])
         self.assertEqual(nodes, [])
@@ -265,7 +273,8 @@ class TestBaseHierachical(TestCase):
             data_dict={posixpath.join(self.h5_path, "f"): {"g": 6, "h": 7}},
         )
         write_dict_to_hdf(
-            file_name=self.file_name, data_dict={posixpath.join(self.h5_path, "i", "l"): 4}
+            file_name=self.file_name,
+            data_dict={posixpath.join(self.h5_path, "i", "l"): 4},
         )
         nodes, groups = list_hdf(file_name=self.file_name, h5_path=self.h5_path)
         self.assertEqual(groups, ["/data_hierarchical/c", "/data_hierarchical/i"])
@@ -279,13 +288,16 @@ class TestBaseHierachical(TestCase):
         self.assertEqual(groups, ["/data_hierarchical/c"])
         self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b"])
         write_dict_to_hdf(
-            file_name=self.file_name, data_dict={posixpath.join(self.h5_path, "j"): ValueError}
+            file_name=self.file_name,
+            data_dict={posixpath.join(self.h5_path, "j"): ValueError},
         )
         with h5py.File(self.file_name, "r") as hdf:
             self.assertEqual(
                 ValueError,
                 _read_hdf(
-                    hdf_filehandle=hdf, h5_path=posixpath.join(self.h5_path, "j"), slash="ignore"
+                    hdf_filehandle=hdf,
+                    h5_path=posixpath.join(self.h5_path, "j"),
+                    slash="ignore",
                 ),
             )
 
