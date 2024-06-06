@@ -157,6 +157,24 @@ class TestBaseHierachical(TestCase):
                 recursive=False,
             ),
         )
+        self.assertEqual(
+            {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}},
+            read_nested_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=self.h5_path,
+                group_paths=[posixpath.join(self.h5_path, "c")],
+                recursive=False,
+            ),
+        )
+        self.assertEqual(
+            {"data_hierarchical": {"c": {"d": 4, "e": 5}}},
+            read_nested_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path="/",
+                group_paths=[posixpath.join(self.h5_path, "c")],
+                recursive=False,
+            ),
+        )
 
     def test_read_hdf(self):
         self.assertEqual(

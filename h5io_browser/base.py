@@ -3,6 +3,7 @@ import numpy as np
 import h5io
 import h5py
 from itertools import count
+import posixpath
 import sys
 import time
 from typing import Callable, TypeVar, Type, Tuple, Optional, Union
@@ -94,7 +95,9 @@ def read_dict_from_hdf(file_name, h5_path, recursive=False, slash="ignore"):
             return {}
 
 
-def read_nested_dict_from_hdf(file_name, h5_path, recursive=False, slash="ignore"):
+def read_nested_dict_from_hdf(
+    file_name, h5_path, group_paths=[], recursive=False, slash="ignore"
+):
     """
     Read data from HDF5 file into a dictionary - by default only the nodes are converted to dictionaries, additional
     sub groups can be specified using the group_paths parameter.
@@ -102,6 +105,9 @@ def read_nested_dict_from_hdf(file_name, h5_path, recursive=False, slash="ignore
     Args:
        file_name (str): Name of the file on disk
        h5_path (str): Path to a group in the HDF5 file from where the data is read
+       group_paths (list): list of additional groups to be included in the dictionary, for example:
+                           ["input", "output", "output/generic"]
+                           These groups are defined relative to the h5_path.
        recursive (bool/int): Recursively browse through the HDF5 file, either a boolean flag or an integer
                               which specifies the level of recursion.
        slash (str): 'ignore' | 'replace' Whether to replace the string {FWDSLASH} with the value /. This does
@@ -109,13 +115,22 @@ def read_nested_dict_from_hdf(file_name, h5_path, recursive=False, slash="ignore
     Returns:
        dict:     The loaded data. Can be of any type supported by ``write_hdf5``.
     """
+    if h5_path[0] != "/":
+        h5_path = "/" + h5_path
     with h5py.File(file_name, "r") as hdf:
         nodes_lst = _get_hdf_content(
             hdf=hdf[h5_path], recursive=recursive, only_nodes=True
         )
-        if not recursive and len(nodes_lst) == 0:
+        if not recursive and len(nodes_lst) == 0 and h5_path != "/":
             nodes_lst += [h5_path]
-        if len(nodes_lst) > 0 and nodes_lst[0] != "/":
+        if len(group_paths) > 0:
+            for group in group_paths:
+                nodes_lst += _get_hdf_content(
+                    hdf=hdf[posixpath.join(h5_path, group)],
+                    recursive=recursive,
+                    only_nodes=True,
+                )
+        if len(nodes_lst) > 0:
             return_dict = {}
             for n in nodes_lst:
                 return_dict = _merge_nested_dict(
