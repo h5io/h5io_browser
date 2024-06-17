@@ -76,10 +76,7 @@ class TestPointer(TestCase):
         p = Pointer(file_name=self.file_name, h5_path="/data_hierarchical")
         self.assertFalse(p.is_empty)
         self.assertTrue(p.file_exists)
-        if os.name == "nt":
-            self.assertEqual(p.file_size(), 6170)
-        else:
-            self.assertEqual(p.file_size(), 6182)
+        self.assertEqual(p.file_size(), 6182)
         self.assertEqual(p["a"], self.data_hierarchical["/data_hierarchical/a"])
         self.assertEqual(
             p["c"].h5_path,
