@@ -1,14 +1,14 @@
 import os
-import numpy as np
-import h5io
-import h5py
-from itertools import count
 import posixpath
 import sys
 import time
-from typing import Callable, TypeVar, Type, Tuple, Optional, Union
 import warnings
+from itertools import count
+from typing import Callable, Optional, Tuple, Type, TypeVar, Union
 
+import h5io
+import h5py
+import numpy as np
 
 T = TypeVar("T")
 
