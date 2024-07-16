@@ -1,10 +1,11 @@
 import os
-from collections.abc import MutableMapping
 import posixpath
+from collections.abc import MutableMapping
+
 from h5io_browser.base import (
+    _open_hdf,
     delete_item,
     list_hdf,
-    _open_hdf,
     read_dict_from_hdf,
     write_dict_to_hdf,
 )
