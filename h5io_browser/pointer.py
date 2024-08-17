@@ -353,8 +353,8 @@ class Pointer(MutableMapping):
         Write a dictionary to the HDF5 file.
 
         Args:
-            data_dict (Dict[str, Any]): Dictionary of data objects to be stored in the HDF5 file, the keys provide the 
-                                        path inside the HDF5 file and the values the data to be stored in those nodes. 
+            data_dict (Dict[str, Any]): Dictionary of data objects to be stored in the HDF5 file, the keys provide the
+                                        path inside the HDF5 file and the values the data to be stored in those nodes.
                                         The corresponding HDF5 groups are created automatically:
                                             {
                                                 '/hdf5root/group/node_name': {},
@@ -362,7 +362,7 @@ class Pointer(MutableMapping):
                                             }
             compression (int, optional): The compression level to use (0-9) to compress data using gzip. Defaults to 4.
         """
-        
+
         write_dict_to_hdf(
             file_name=self.file_name,
             data_dict={
