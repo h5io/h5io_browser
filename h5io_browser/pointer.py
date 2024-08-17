@@ -1,7 +1,7 @@
 import os
 import posixpath
 from collections.abc import MutableMapping
-from typing import Union, List, Dict, Any
+from typing import Any, Dict, List, Union
 
 from h5io_browser.base import (
     _open_hdf,
@@ -187,6 +187,7 @@ class Pointer(MutableMapping):
         Returns:
             Pointer: The Pointer object pointing to a file which now contains the same content as the current file.
         """
+
         def _internal_copy(
             source: "h5py.File",
             source_path: str,
