@@ -3,6 +3,7 @@ import numpy as np
 import h5py
 from unittest import TestCase
 import posixpath
+import h5io
 from h5io_browser import (
     delete_item,
     list_hdf,
@@ -398,3 +399,38 @@ class TestBaseJSON(TestCase):
         nodes, groups = list_hdf(file_name=self.file_name, h5_path="/data_json")
         self.assertEqual(groups, [])
         self.assertEqual(nodes, ["/data_json/a"])
+
+
+class TestCompatibility(TestCase):
+    def setUp(self):
+        self.file_name = "testcomp.h5"
+        self.data = {'array': np.ones(4) * 42, 'b': 42,}
+        self.h5_path = "h5io"
+        h5io.write_hdf5('testcomp.h5', self.data)
+
+    def test_h5io(self):
+        dataread = h5io.read_hdf5(self.file_name, self.h5_path)
+        for k, v in self.data.items():
+            if isinstance(v, np.ndarray):
+                self.assertTrue(all(np.equal(v, dataread[k])))
+            else:
+                self.assertTrue(v == dataread[k])
+
+    def test_read_dict_from_hdf(self):
+        dataread = read_dict_from_hdf(self.file_name, self.h5_path)
+        for k, v in self.data.items():
+            if isinstance(v, np.ndarray):
+                self.assertTrue(all(np.equal(v, dataread[self.h5_path][k])))
+            else:
+                self.assertTrue(v == dataread[self.h5_path][k])
+
+    def test_read_nested_dict_from_hdf(self):
+        dataread = read_nested_dict_from_hdf(self.file_name, self.h5_path)
+        for k, v in self.data.items():
+            if isinstance(v, np.ndarray):
+                self.assertTrue(all(np.equal(v, dataread[self.h5_path][k])))
+            else:
+                self.assertTrue(v == dataread[self.h5_path][k])
+
+    def tearDown(self):
+        os.remove(self.file_name)
