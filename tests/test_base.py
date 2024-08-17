@@ -404,9 +404,12 @@ class TestBaseJSON(TestCase):
 class TestCompatibility(TestCase):
     def setUp(self):
         self.file_name = "testcomp.h5"
-        self.data = {'array': np.ones(4) * 42, 'b': 42,}
+        self.data = {
+            "array": np.ones(4) * 42,
+            "b": 42,
+        }
         self.h5_path = "h5io"
-        h5io.write_hdf5('testcomp.h5', self.data)
+        h5io.write_hdf5("testcomp.h5", self.data)
 
     def test_h5io(self):
         dataread = h5io.read_hdf5(self.file_name, self.h5_path)

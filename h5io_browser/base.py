@@ -82,7 +82,9 @@ def read_dict_from_hdf(file_name, h5_path, recursive=False, slash="ignore"):
              any type supported by ``write_hdf5``.
     """
     with h5py.File(file_name, "r") as hdf:
-        return _read_dict_from_open_hdf(hdf_filehandle=hdf, h5_path=h5_path, recursive=recursive, slash=slash)
+        return _read_dict_from_open_hdf(
+            hdf_filehandle=hdf, h5_path=h5_path, recursive=recursive, slash=slash
+        )
 
 
 def read_nested_dict_from_hdf(
@@ -117,7 +119,7 @@ def read_nested_dict_from_hdf(
                 hdf_filehandle=hdf,
                 h5_path=h5_path[1:],
                 recursive=recursive,
-                slash=slash
+                slash=slash,
             )
         else:
             nodes_lst = _get_hdf_content(
@@ -296,7 +298,7 @@ def _read_hdf(hdf_filehandle, h5_path, slash="ignore"):
 
 def _read_dict_from_open_hdf(hdf_filehandle, h5_path, recursive=False, slash="ignore"):
     """
-    Read data from an open HDF5 file into a dictionary - by default only the nodes are converted to dictionaries, 
+    Read data from an open HDF5 file into a dictionary - by default only the nodes are converted to dictionaries,
     additional sub groups can be converted using the recursive parameter.
 
     Args:
