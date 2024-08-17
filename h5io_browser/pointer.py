@@ -1,6 +1,7 @@
 import os
 import posixpath
 from collections.abc import MutableMapping
+from typing import Any, Dict, List, Union
 
 from h5io_browser.base import (
     _open_hdf,
@@ -11,9 +12,9 @@ from h5io_browser.base import (
 )
 
 
-def convert_dict_items_to_str(input_dict):
+def convert_dict_items_to_str(input_dict: dict) -> dict:
     """
-    Recursively convert all kys and values to strings using the str() method.
+    Recursively convert all keys and values to strings using the str() method.
 
     Args:
         input_dict (dict): dictionary to be converted, can be hierarchical
@@ -30,7 +31,7 @@ def convert_dict_items_to_str(input_dict):
     }
 
 
-def get_hierarchical_dict(path_dict):
+def get_hierarchical_dict(path_dict: dict) -> dict:
     """
     Convert a flat dictionary which consists of the keys as HDF5 paths and the values as the data stored in these HDF5
     nodes to a hierarchical dictionary.
@@ -72,7 +73,14 @@ def get_hierarchical_dict(path_dict):
 
 
 class Pointer(MutableMapping):
-    def __init__(self, file_name, h5_path="/"):
+    def __init__(self, file_name: str, h5_path: str = "/") -> None:
+        """
+        Initialize the Pointer object.
+
+        Args:
+            file_name (str): The name of the HDF5 file.
+            h5_path (str, optional): The path in the HDF5 file starting from the root group. Defaults to "/".
+        """
         file_name += ".h5" if not file_name.endswith(".h5") else ""
         self._file_name = None
         self._h5_path = None
@@ -80,12 +88,12 @@ class Pointer(MutableMapping):
         self.h5_path = h5_path
 
     @property
-    def file_exists(self):
+    def file_exists(self) -> bool:
         """
-        Check if the HDF5 file exists already
+        Check if the HDF5 file exists already.
 
         Returns:
-            bool: [True/False]
+            bool: True if the file exists, False otherwise.
         """
         if os.path.isfile(self.file_name):
             return True
@@ -93,42 +101,42 @@ class Pointer(MutableMapping):
             return False
 
     @property
-    def file_name(self):
+    def file_name(self) -> str:
         """
-        Get the file name of the HDF5 file
+        Get the file name of the HDF5 file.
 
         Returns:
-            str: absolute path to the HDF5 file
+            str: The absolute path to the HDF5 file.
         """
         return self._file_name
 
     @file_name.setter
-    def file_name(self, new_file_name):
+    def file_name(self, new_file_name: str) -> None:
         """
-        Set the file name of the HDF5 file
+        Set the file name of the HDF5 file.
 
         Args:
-            new_file_name (str): absolute path to the HDF5 file
+            new_file_name (str): The absolute path to the HDF5 file.
         """
         self._file_name = os.path.abspath(new_file_name).replace("\\", "/")
 
     @property
-    def h5_path(self):
+    def h5_path(self) -> str:
         """
-        Get the path in the HDF5 file starting from the root group - meaning this path starts with '/'
+        Get the path in the HDF5 file starting from the root group.
 
         Returns:
-            str: HDF5 path
+            str: The HDF5 path.
         """
         return self._h5_path
 
     @h5_path.setter
-    def h5_path(self, path):
+    def h5_path(self, path: str) -> None:
         """
-        Set the path in the HDF5 file starting from the root group
+        Set the path in the HDF5 file starting from the root group - meaning this path starts with '/'.
 
         Args:
-            path (str): HDF5 path
+            path (str): The HDF5 path.
         """
         if (path is None) or (path == ""):
             path = "/"
@@ -137,12 +145,12 @@ class Pointer(MutableMapping):
             self._h5_path = "/" + self._h5_path
 
     @property
-    def is_empty(self):
+    def is_empty(self) -> bool:
         """
-        Check if the HDF5 file is empty
+        Check if the HDF5 file is empty.
 
         Returns:
-            bool: [True/False]
+            bool: True if the file is empty, False otherwise.
         """
         if self.file_exists:
             nodes, groups = list_hdf(
@@ -153,39 +161,49 @@ class Pointer(MutableMapping):
             return True
 
     @property
-    def is_root(self):
+    def is_root(self) -> bool:
         """
         Check if the current h5_path is pointing to the HDF5 root group.
 
         Returns:
-            bool: [True/False]
+            bool: True if the current h5_path is the root group, False otherwise.
         """
         return "/" == self.h5_path
 
-    def copy_to(self, destination, file_name=None, maintain_name=True):
+    def copy_to(
+        self,
+        destination: "Pointer",
+        file_name: str = None,
+        maintain_name: bool = True,
+    ) -> "Pointer":
         """
-        Copy the content of the HDF5 file to a new location
+        Copy the content of the HDF5 file to a new location.
 
         Args:
-            destination (FileHDFio): FileHDFio object pointing to the new location
-            file_name (str): name of the new HDF5 file - optional
-            maintain_name (bool): by default the names of the HDF5 groups are maintained
+            destination (Pointer): The Pointer object pointing to the new location.
+            file_name (str, optional): The name of the new HDF5 file. Defaults to None.
+            maintain_name (bool, optional): Whether to maintain the names of the HDF5 groups. Defaults to True.
 
         Returns:
-            FileHDFio: FileHDFio object pointing to a file which now contains the same content as file of the current
-                       FileHDFio object.
+            Pointer: The Pointer object pointing to a file which now contains the same content as the current file.
         """
 
-        def _internal_copy(source, source_path, target, target_path, maintain_flag):
+        def _internal_copy(
+            source: "h5py.File",
+            source_path: str,
+            target: "h5py.File",
+            target_path: str,
+            maintain_flag: bool,
+        ) -> None:
             """
             Internal function to copy content of one HDF5 file to another or copy a group within the same HDF5 file.
 
             Args:
-                source (h5py.File): HDF5 File object
-                source_path (str): Path inside the source HDF5 file
-                target (h5py.File): HDF5 File object
-                target_path (str): Path inside the target HDF5 file
-                maintain_flag (bool): Maintain the same group name
+                source (h5py.File): The source HDF5 File object.
+                source_path (str): The path inside the source HDF5 file.
+                target (h5py.File): The target HDF5 File object.
+                target_path (str): The path inside the target HDF5 file.
+                maintain_flag (bool): Whether to maintain the same group name.
             """
             if maintain_flag:
                 try:
@@ -250,37 +268,37 @@ class Pointer(MutableMapping):
 
         return destination
 
-    def file_size(self):
+    def file_size(self) -> float:
         """
-        Get size of the HDF5 file
+        Get the size of the HDF5 file.
 
         Returns:
-            float: file size in Bytes
+            float: The file size in bytes.
         """
         try:
             return os.path.getsize(self.file_name)
         except FileNotFoundError:
             return 0
 
-    def list_all(self):
+    def list_all(self) -> List[str]:
         """
-        List all groups and nodes in the HDF5 file as the current h5 path
+        List all groups and nodes in the HDF5 file at the current h5 path.
 
         Returns:
-            list: combined list of all groups and nodes in the HDF5 file
+            List[str]: A combined list of all groups and nodes in the HDF5 file.
         """
         list_dict = self.list_h5_path(h5_path=self.h5_path)
         return list_dict["nodes"] + list_dict["groups"]
 
-    def list_h5_path(self, h5_path=""):
+    def list_h5_path(self, h5_path: str = "") -> Dict[str, List[str]]:
         """
-        List all groups and nodes of the HDF5 file - where groups are equivalent to directories and nodes to files.
+        List all groups and nodes of the HDF5 file.
 
         Args:
-            h5_path (str): Path to a group in the HDF5 file from where the data is read
+            h5_path (str, optional): The path to a group in the HDF5 file from where the data is read. Defaults to "".
 
         Returns:
-            dict: {'groups': [list of groups], 'nodes': [list of nodes]}
+            Dict[str, List[str]]: A dictionary with keys "groups" and "nodes" containing lists of groups and nodes.
         """
         if h5_path == "":
             h5_path_select = self.h5_path
@@ -299,18 +317,15 @@ class Pointer(MutableMapping):
         else:
             return {"groups": [], "nodes": []}
 
-    def to_dict(self, hierarchical=False):
+    def to_dict(self, hierarchical: bool = False) -> Dict[str, Any]:
         """
-        Get the content of the HDF5 file at the current h5_path returned as a dictionary. This includes all sub-groups
-        and nodes on all levels of the hierarchy of the HDF5 file below the selected h5_path.
+        Get the content of the HDF5 file at the current h5_path returned as a dictionary.
 
         Args:
-            hierarchical (bool): If this parameter is false the returned dictionary has the h5_paths as keys and the
-                                 corresponding nodes as values. If this parameter is true, then the internal hierarchy
-                                 of the HDF5 file is converted to an hierarchical dictionary.
+            hierarchical (bool, optional): Whether to convert the internal hierarchy of the HDF5 file to a hierarchical dictionary. Defaults to False.
 
         Returns:
-            dict: Dictionary with the content of the HDF5 file
+            Dict[str, Any]: A dictionary with the content of the HDF5 file.
         """
         try:
             path_dict = read_dict_from_hdf(
@@ -333,20 +348,21 @@ class Pointer(MutableMapping):
             else:
                 return rel_path_dict
 
-    def write_dict(self, data_dict, compression=4):
+    def write_dict(self, data_dict: Dict[str, Any], compression: int = 4) -> None:
         """
-        Write dictionary to HDF5 file
+        Write a dictionary to the HDF5 file.
 
         Args:
-            data_dict (dict): Dictionary of data objects to be stored in the HDF5 file, the keys provide the path inside
-                              the HDF5 file and the values the data to be stored in those nodes. The corresponding HDF5
-                              groups are created automatically:
-                                  {
-                                      '/hdf5root/group/node_name': {},
-                                      '/hdf5root/group/subgroup/node_name': [...],
-                                  }
-            compression (int): Compression level to use (0-9) to compress data using gzip.
+            data_dict (Dict[str, Any]): Dictionary of data objects to be stored in the HDF5 file, the keys provide the
+                                        path inside the HDF5 file and the values the data to be stored in those nodes.
+                                        The corresponding HDF5 groups are created automatically:
+                                            {
+                                                '/hdf5root/group/node_name': {},
+                                                '/hdf5root/group/subgroup/node_name': [...],
+                                            }
+            compression (int, optional): The compression level to use (0-9) to compress data using gzip. Defaults to 4.
         """
+
         write_dict_to_hdf(
             file_name=self.file_name,
             data_dict={
@@ -355,38 +371,38 @@ class Pointer(MutableMapping):
             compression=compression,
         )
 
-    def _repr_json_(self):
+    def _repr_json_(self) -> Dict[str, Any]:
         """
         Represent the Pointer inside an interactive python shell or Jupyter Notebooks. In particular in Jupyter lab
         the content of the HDF5 file can be browsed interactively. This function recursively loads all the content below
         the current h5_path.
 
         Returns:
-            dict: Dictionary of the hierarchy of the HDF5 file at the current h5_path
+            Dict[str, Any]: A dictionary of the hierarchy of the HDF5 file at the current h5_path.
         """
         return convert_dict_items_to_str(input_dict=self.to_dict(hierarchical=True))
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: str) -> None:
         """
-        Delete item from the HDF5 file
+        Delete an item from the HDF5 file.
 
         Args:
-            key (str): key of the item to delete
+            key (str): The key of the item to delete.
         """
         if self.file_exists:
             delete_item(
                 file_name=self.file_name, h5_path=posixpath.join(self._h5_path, key)
             )
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: Union[str, slice]) -> Union[Dict, List, float, int]:
         """
-        Get/ read data from the HDF5 file
+        Get/read data from the HDF5 file.
 
         Args:
-            item (str, slice): path to the data or key of the data object
+            item (Union[str, slice]): The path to the data or the key of the data object.
 
         Returns:
-            dict, list, float, int: data or data object
+            Union[Dict, List, float, int]: The data or data object.
         """
         if self._h5_path != "/":
             h5_path_new = self._h5_path + "/" + item

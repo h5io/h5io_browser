@@ -4,7 +4,7 @@ import sys
 import time
 import warnings
 from itertools import count
-from typing import Callable, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, List, Optional, Tuple, Type, TypeVar, Union
 
 import h5io
 import h5py
@@ -25,7 +25,7 @@ H5IO_GROUP_TYPES = (
 )
 
 
-def delete_item(file_name, h5_path):
+def delete_item(file_name: str, h5_path: str) -> None:
     """
     Delete item from HDF5 file
 
@@ -41,7 +41,9 @@ def delete_item(file_name, h5_path):
         pass
 
 
-def list_hdf(file_name, h5_path, recursive=False):
+def list_hdf(
+    file_name: str, h5_path: str, recursive: Union[bool, int] = False
+) -> Tuple[List[str], List[str]]:
     """
     List HDF5 nodes and HDF5 groups of a given HDF5 file at a given h5_path
 
@@ -64,7 +66,9 @@ def list_hdf(file_name, h5_path, recursive=False):
         return [], []
 
 
-def read_dict_from_hdf(file_name, h5_path, recursive=False, slash="ignore"):
+def read_dict_from_hdf(
+    file_name: str, h5_path: str, recursive: bool = False, slash: str = "ignore"
+) -> dict:
     """
     Read data from HDF5 file into a dictionary - by default only the nodes are converted to dictionaries, additional
     sub groups can be converted using the recursive parameter.
@@ -97,8 +101,12 @@ def read_dict_from_hdf(file_name, h5_path, recursive=False, slash="ignore"):
 
 
 def read_nested_dict_from_hdf(
-    file_name, h5_path, group_paths=[], recursive=False, slash="ignore"
-):
+    file_name: str,
+    h5_path: str,
+    group_paths: List[str] = [],
+    recursive: bool = False,
+    slash: str = "ignore",
+) -> dict:
     """
     Read data from HDF5 file into a dictionary - by default only the nodes are converted to dictionaries, additional
     sub groups can be specified either using the group_paths parameter or using the recursive parameter.
@@ -147,7 +155,9 @@ def read_nested_dict_from_hdf(
             return {}
 
 
-def write_dict_to_hdf(file_name, data_dict, compression=4, slash="error"):
+def write_dict_to_hdf(
+    file_name: str, data_dict: dict, compression: int = 4, slash: str = "error"
+) -> None:
     """
     Write dictionary to HDF5 file
 
@@ -176,12 +186,12 @@ def write_dict_to_hdf(file_name, data_dict, compression=4, slash="error"):
             )
 
 
-def _get_filename_from_filehandle(hdf_filehandle):
+def _get_filename_from_filehandle(hdf_filehandle: Union[h5py.File, str]) -> str:
     """
     Get filename from filehandle object
 
     Args:
-        hdf_filehandle (h5py.File): Open h5py file handle
+        hdf_filehandle (h5py.File or str): Open h5py file handle or file name as string
 
     Returns:
         str: filename of the filehandle object
@@ -198,13 +208,13 @@ def _get_filename_from_filehandle(hdf_filehandle):
     return file_name
 
 
-def _get_nested_dict_item(key, value, h5_path=""):
+def _get_nested_dict_item(key: str, value: T, h5_path: str = "") -> dict:
     """
     Turns a dict with a key containing slashes into a nested dict.  {'/a/b/c': 1} -> {'a': {'b': {'c': 1}
 
     Args:
         key (str): path inside the HDF5 file the data_dictionary was loaded from
-        value (object): value of the dictionary item
+        value (T): value of the dictionary item
         h5_path (str): group path inside the HDF5 file
 
     Returns:
@@ -222,7 +232,7 @@ def _get_nested_dict_item(key, value, h5_path=""):
         return {key.split("/")[-1]: nested_dict}
 
 
-def _merge_nested_dict(main_dict, add_dict):
+def _merge_nested_dict(main_dict: dict, add_dict: dict) -> dict:
     """
     Merge two dictionaries recursively
 
@@ -241,7 +251,7 @@ def _merge_nested_dict(main_dict, add_dict):
     return main_dict
 
 
-def _open_hdf(filename, mode="r", swmr=False):
+def _open_hdf(filename: str, mode: str = "r", swmr: bool = False) -> h5py.File:
     """
     Open HDF5 file
 
@@ -266,7 +276,9 @@ def _open_hdf(filename, mode="r", swmr=False):
         return h5py.File(name=filename, mode=mode, libver="latest", swmr=swmr)
 
 
-def _read_hdf(hdf_filehandle, h5_path, slash="ignore"):
+def _read_hdf(
+    hdf_filehandle: Union[str, h5py.File], h5_path: str, slash: str = "ignore"
+) -> Any:
     """
     Read data from HDF5 file
 
@@ -294,15 +306,15 @@ def _read_hdf(hdf_filehandle, h5_path, slash="ignore"):
 
 
 def _write_hdf(
-    hdf_filehandle,
-    h5_path,
-    data,
-    overwrite=False,
-    compression=4,
-    slash="error",
-    use_json=False,
-    use_state=False,
-):
+    hdf_filehandle: Union[str, h5py.File],
+    h5_path: str,
+    data: Any,
+    overwrite: Union[str, bool] = False,
+    compression: int = 4,
+    slash: str = "error",
+    use_json: bool = False,
+    use_state: bool = False,
+) -> None:
     """
     Write data to HDF5 file
 
@@ -344,8 +356,12 @@ def _write_hdf(
 
 
 def _write_hdf5_with_json_support(
-    hdf_filehandle, h5_path, data, compression=4, slash="error"
-):
+    hdf_filehandle: Union[str, h5py.File],
+    h5_path: str,
+    data: Any,
+    compression: int = 4,
+    slash: str = "error",
+) -> None:
     """
     Write data to HDF5 file and store dictionaries as JSON to optimize performance
 
@@ -379,7 +395,7 @@ def _write_hdf5_with_json_support(
         ) from None
 
 
-def _list_h5path(hdf):
+def _list_h5path(hdf: Union[h5py.File, h5py.Group]) -> Tuple[List[str], List[str]]:
     """
     List groups and nodes in a given HDF5 path
 
@@ -387,7 +403,7 @@ def _list_h5path(hdf):
         hdf (h5py.File/h5py.Group): HDF5 pointer
 
     Returns:
-        (list, list): list of groups and list of nodes
+        Tuple[List[str], List[str]]: list of groups and list of nodes
     """
     group_lst, nodes_lst = [], []
     try:
@@ -409,7 +425,12 @@ def _list_h5path(hdf):
         return nodes_lst, group_lst
 
 
-def _get_hdf_content(hdf, recursive=False, only_groups=False, only_nodes=False):
+def _get_hdf_content(
+    hdf: Union[h5py.File, h5py.Group],
+    recursive: Union[bool, int] = False,
+    only_groups: bool = False,
+    only_nodes: bool = False,
+) -> Union[List[str], Tuple[List[str], List[str]]]:
     """
     Get all sub-groups of a given HDF5 path
 
@@ -459,7 +480,7 @@ def _get_hdf_content(hdf, recursive=False, only_groups=False, only_nodes=False):
         return _list_h5path(hdf=hdf)
 
 
-def _check_json_conversion(value):
+def _check_json_conversion(value: Any) -> Tuple[Any, bool]:
     """
     Check if the object can be converted to JSON to optimize the HDF5 performance. This can change the data type of the
     object which is going to be stored in the HDF5 file.
@@ -468,7 +489,7 @@ def _check_json_conversion(value):
         value (object): Object to be converted.
 
     Returns:
-        object bool: value object and boolean flag to store the dictionary as JSON
+        Tuple[object, bool]: value object and boolean flag to store the dictionary as JSON
     """
     use_json = True
     if (
@@ -496,7 +517,7 @@ def _is_ragged_in_1st_dim_only(value: Union[np.ndarray, list]) -> bool:
     That means all other dimensions (except the first one) still have to match.
 
     Args:
-        value (ndarray/list): array to check
+        value (Union[np.ndarray, list]): array or list to check
 
     Returns:
         bool: True if elements of value are not all of the same shape
@@ -506,6 +527,15 @@ def _is_ragged_in_1st_dim_only(value: Union[np.ndarray, list]) -> bool:
     else:
 
         def extract_dims(v):
+            """
+            Extracts the dimensions of an array or list.
+
+            Args:
+                v (Union[np.ndarray, list]): array or list
+
+            Returns:
+                Tuple[int, Tuple[int]]: first dimension and other dimensions
+            """
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 s = np.shape(v)
@@ -538,7 +568,7 @@ def _retry(
         delay_factor (float): multiply `delay` between retries by this factor
 
     Raises:
-        `error`: if `at_most` is exceeded the last error is re-raised
+        error: if `at_most` is exceeded the last error is re-raised
         Exception: any exception raised by `func` that does not match `error`
 
     Returns:
