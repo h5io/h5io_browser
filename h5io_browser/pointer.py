@@ -133,7 +133,7 @@ class Pointer(MutableMapping):
     @h5_path.setter
     def h5_path(self, path: str) -> None:
         """
-        Set the path in the HDF5 file starting from the root group.
+        Set the path in the HDF5 file starting from the root group - meaning this path starts with '/'.
 
         Args:
             path (str): The HDF5 path.
