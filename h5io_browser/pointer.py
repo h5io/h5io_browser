@@ -352,9 +352,16 @@ class Pointer(MutableMapping):
         Write a dictionary to the HDF5 file.
 
         Args:
-            data_dict (Dict[str, Any]): A dictionary of data objects to be stored in the HDF5 file.
+            data_dict (Dict[str, Any]): Dictionary of data objects to be stored in the HDF5 file, the keys provide the 
+                                        path inside the HDF5 file and the values the data to be stored in those nodes. 
+                                        The corresponding HDF5 groups are created automatically:
+                                            {
+                                                '/hdf5root/group/node_name': {},
+                                                '/hdf5root/group/subgroup/node_name': [...],
+                                            }
             compression (int, optional): The compression level to use (0-9) to compress data using gzip. Defaults to 4.
         """
+        
         write_dict_to_hdf(
             file_name=self.file_name,
             data_dict={
@@ -365,7 +372,9 @@ class Pointer(MutableMapping):
 
     def _repr_json_(self) -> Dict[str, Any]:
         """
-        Represent the Pointer inside an interactive python shell or Jupyter Notebooks.
+        Represent the Pointer inside an interactive python shell or Jupyter Notebooks. In particular in Jupyter lab
+        the content of the HDF5 file can be browsed interactively. This function recursively loads all the content below
+        the current h5_path.
 
         Returns:
             Dict[str, Any]: A dictionary of the hierarchy of the HDF5 file at the current h5_path.
