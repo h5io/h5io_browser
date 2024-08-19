@@ -68,30 +68,6 @@ def list_hdf(
 
 
 def read_dict_from_hdf(
-    file_name: str, h5_path: str, recursive: bool = False, slash: str = "ignore"
-) -> dict:
-    """
-    Read data from HDF5 file into a dictionary - by default only the nodes are converted to dictionaries, additional
-    sub groups can be converted using the recursive parameter.
-
-    Args:
-       file_name (str): Name of the file on disk
-       h5_path (str): Path to a group in the HDF5 file from where the data is read
-       recursive (bool/int): Recursively browse through the HDF5 file, either a boolean flag or an integer
-                              which specifies the level of recursion.
-       slash (str): 'ignore' | 'replace' Whether to replace the string {FWDSLASH} with the value /. This does
-                    not apply to the top level name (title). If 'ignore', nothing will be replaced.
-    Returns:
-       dict: The loaded data as dictionary, with the keys being the path inside the HDF5 file. The values can be of
-             any type supported by ``write_hdf5``.
-    """
-    with h5py.File(file_name, "r") as hdf:
-        return _read_dict_from_open_hdf(
-            hdf_filehandle=hdf, h5_path=h5_path, recursive=recursive, slash=slash
-        )
-
-
-def read_nested_dict_from_hdf(
     file_name: str,
     h5_path: str,
     group_paths: List[str] = [],

@@ -4,19 +4,44 @@ import h5py
 from unittest import TestCase
 import posixpath
 import h5io
+import h5py
 from h5io_browser import (
     delete_item,
     list_hdf,
     read_dict_from_hdf,
-    read_nested_dict_from_hdf,
     write_dict_to_hdf,
 )
 from h5io_browser.base import (
     _get_hdf_content,
     _is_ragged_in_1st_dim_only,
+    _read_dict_from_open_hdf,
     _read_hdf,
     _write_hdf,
 )
+
+
+def _read_dict_from_hdf(
+    file_name: str, h5_path: str, recursive: bool = False, slash: str = "ignore"
+) -> dict:
+    """
+    Read data from HDF5 file into a dictionary - by default only the nodes are converted to dictionaries, additional
+    sub groups can be converted using the recursive parameter.
+
+    Args:
+       file_name (str): Name of the file on disk
+       h5_path (str): Path to a group in the HDF5 file from where the data is read
+       recursive (bool/int): Recursively browse through the HDF5 file, either a boolean flag or an integer
+                              which specifies the level of recursion.
+       slash (str): 'ignore' | 'replace' Whether to replace the string {FWDSLASH} with the value /. This does
+                    not apply to the top level name (title). If 'ignore', nothing will be replaced.
+    Returns:
+       dict: The loaded data as dictionary, with the keys being the path inside the HDF5 file. The values can be of
+             any type supported by ``write_hdf5``.
+    """
+    with h5py.File(file_name, "r") as hdf:
+        return _read_dict_from_open_hdf(
+            hdf_filehandle=hdf, h5_path=h5_path, recursive=recursive, slash=slash
+        )
 
 
 def get_hdf5_raw_content(file_name):
@@ -78,24 +103,24 @@ class TestBaseHierachical(TestCase):
     def test_read_dict_hierarchical(self):
         self.assertEqual(
             self.data_hierarchical,
-            read_dict_from_hdf(
+            _read_dict_from_hdf(
                 file_name=self.file_name, h5_path=self.h5_path, recursive=True
             ),
         )
         self.assertEqual(
             self.data_hierarchical,
-            read_dict_from_hdf(
+            _read_dict_from_hdf(
                 file_name=self.file_name, h5_path=self.h5_path, recursive=1
             ),
         )
-        self.assertEqual({}, read_dict_from_hdf(file_name=self.file_name, h5_path="/"))
+        self.assertEqual({}, _read_dict_from_hdf(file_name=self.file_name, h5_path="/"))
         self.assertEqual(
             {
                 k: v
                 for k, v in self.data_hierarchical.items()
                 if "/data_hierarchical/c" in k
             },
-            read_dict_from_hdf(
+            _read_dict_from_hdf(
                 file_name=self.file_name,
                 h5_path=posixpath.join(self.h5_path, "c"),
                 recursive=True,
@@ -103,13 +128,13 @@ class TestBaseHierachical(TestCase):
         )
         self.assertEqual(
             {"/data_hierarchical/a": [1, 2]},
-            read_dict_from_hdf(
+            _read_dict_from_hdf(
                 file_name=self.file_name, h5_path=posixpath.join(self.h5_path, "a")
             ),
         )
         self.assertEqual(
             {"/data_hierarchical/b": 3},
-            read_dict_from_hdf(
+            _read_dict_from_hdf(
                 file_name=self.file_name, h5_path=posixpath.join(self.h5_path, "b")
             ),
         )
@@ -117,7 +142,7 @@ class TestBaseHierachical(TestCase):
     def test_read_nested_dict_hierarchical(self):
         self.assertEqual(
             {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}},
-            read_nested_dict_from_hdf(
+            read_dict_from_hdf(
                 file_name=self.file_name,
                 h5_path=self.h5_path,
                 recursive=True,
@@ -125,7 +150,7 @@ class TestBaseHierachical(TestCase):
         )
         self.assertEqual(
             {"data_hierarchical": {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}}},
-            read_nested_dict_from_hdf(
+            read_dict_from_hdf(
                 file_name=self.file_name,
                 h5_path="/",
                 recursive=True,
@@ -133,7 +158,7 @@ class TestBaseHierachical(TestCase):
         )
         self.assertEqual(
             {"d": 4, "e": 5},
-            read_nested_dict_from_hdf(
+            read_dict_from_hdf(
                 file_name=self.file_name,
                 h5_path=posixpath.join(self.h5_path, "c"),
                 recursive=True,
@@ -141,7 +166,7 @@ class TestBaseHierachical(TestCase):
         )
         self.assertEqual(
             {"a": [1, 2], "b": 3},
-            read_nested_dict_from_hdf(
+            read_dict_from_hdf(
                 file_name=self.file_name,
                 h5_path=self.h5_path,
                 recursive=False,
@@ -149,7 +174,7 @@ class TestBaseHierachical(TestCase):
         )
         self.assertEqual(
             {"a": [1, 2]},
-            read_nested_dict_from_hdf(
+            read_dict_from_hdf(
                 file_name=self.file_name,
                 h5_path=posixpath.join(self.h5_path, "a"),
                 recursive=False,
@@ -157,7 +182,7 @@ class TestBaseHierachical(TestCase):
         )
         self.assertEqual(
             {"b": 3},
-            read_nested_dict_from_hdf(
+            read_dict_from_hdf(
                 file_name=self.file_name,
                 h5_path=posixpath.join(self.h5_path, "b"),
                 recursive=False,
@@ -165,7 +190,7 @@ class TestBaseHierachical(TestCase):
         )
         self.assertEqual(
             {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}},
-            read_nested_dict_from_hdf(
+            read_dict_from_hdf(
                 file_name=self.file_name,
                 h5_path=self.h5_path,
                 group_paths=[posixpath.join(self.h5_path, "c")],
@@ -174,7 +199,7 @@ class TestBaseHierachical(TestCase):
         )
         self.assertEqual(
             {"data_hierarchical": {"c": {"d": 4, "e": 5}}},
-            read_nested_dict_from_hdf(
+            read_dict_from_hdf(
                 file_name=self.file_name,
                 h5_path="/",
                 group_paths=[posixpath.join(self.h5_path, "c")],
@@ -367,17 +392,17 @@ class TestBaseJSON(TestCase):
     def test_read_dict_hierarchical(self):
         self.assertEqual(
             self.data_hierarchical,
-            read_dict_from_hdf(
+            _read_dict_from_hdf(
                 file_name=self.file_name, h5_path=self.h5_path, recursive=True
             ),
         )
         self.assertEqual(
             self.data_hierarchical,
-            read_dict_from_hdf(
+            _read_dict_from_hdf(
                 file_name=self.file_name, h5_path=self.h5_path, recursive=1
             ),
         )
-        self.assertEqual({}, read_dict_from_hdf(file_name=self.file_name, h5_path="/"))
+        self.assertEqual({}, _read_dict_from_hdf(file_name=self.file_name, h5_path="/"))
 
     def test_hdf5_structure(self):
         self.assertEqual(
@@ -425,7 +450,7 @@ class TestCompatibility(TestCase):
                 self.assertTrue(v == dataread[k])
 
     def test_read_dict_from_hdf(self):
-        dataread = read_dict_from_hdf(self.file_name, self.h5_path)
+        dataread = _read_dict_from_hdf(self.file_name, self.h5_path)
         for k, v in self.data.items():
             if isinstance(v, np.ndarray):
                 self.assertTrue(all(np.equal(v, dataread[self.h5_path][k])))
@@ -433,7 +458,7 @@ class TestCompatibility(TestCase):
                 self.assertTrue(v == dataread[self.h5_path][k])
 
     def test_read_nested_dict_from_hdf(self):
-        dataread = read_nested_dict_from_hdf(self.file_name, self.h5_path)
+        dataread = read_dict_from_hdf(self.file_name, self.h5_path)
         for k, v in self.data.items():
             if isinstance(v, np.ndarray):
                 self.assertTrue(all(np.equal(v, dataread[self.h5_path][k])))
@@ -471,14 +496,12 @@ class TestBasePartialRead(TestCase):
         os.remove(self.file_name)
 
     def test_read_dict_hierarchical(self):
-        output = read_nested_dict_from_hdf(
-            file_name=self.file_name, h5_path=self.h5_path
-        )
+        output = read_dict_from_hdf(file_name=self.file_name, h5_path=self.h5_path)
         self.assertTrue(
             np.all(np.equal(output["a"], np.array([1, 2]))),
         )
         self.assertEqual(output["b"], 3)
-        output = read_nested_dict_from_hdf(
+        output = read_dict_from_hdf(
             file_name=self.file_name,
             h5_path=self.h5_path,
             group_paths=["c"],
@@ -493,7 +516,7 @@ class TestBasePartialRead(TestCase):
         self.assertTrue(
             np.all(np.equal(output["c"]["e"], np.array([6, 7]))),
         )
-        output = read_nested_dict_from_hdf(
+        output = read_dict_from_hdf(
             file_name=self.file_name,
             h5_path=self.h5_path,
             recursive=True,
