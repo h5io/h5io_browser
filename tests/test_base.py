@@ -446,60 +446,57 @@ class TestCompatibility(TestCase):
 
 class TestBasePartialRead(TestCase):
     def setUp(self):
-        self.file_name = "test_write_hdf5.h5"
+        self.file_name = "test_structured_hdf.h5"
         self.h5_path = "data_hierarchical"
-        self.data_hierarchical = {"a": [1, 2], "b": 3, "c": {"d": 4, "e": {"f": 5}}}
-        _write_hdf(
-            hdf_filehandle=self.file_name,
-            data=self.data_hierarchical,
-            h5_path=self.h5_path,
+        self.data_hierarchical = {"a": np.array([1, 2]), "b": 3, "c": {"d": np.array([4, 5]), "e": np.array([6, 7])}}
+        write_dict_to_hdf(
+            file_name=self.file_name,
+            data_dict={
+                posixpath.join(self.h5_path, "a"): self.data_hierarchical["a"],
+                posixpath.join(self.h5_path, "b"): self.data_hierarchical["b"],
+                posixpath.join(self.h5_path, "c", "d"): self.data_hierarchical["c"]["d"],
+                posixpath.join(self.h5_path, "c", "e"): self.data_hierarchical["c"]["e"],
+            },
         )
 
     def tearDown(self):
         os.remove(self.file_name)
 
-    def test_read_hierarchical(self):
-        self.assertEqual(
-            self.data_hierarchical,
-            _read_hdf(hdf_filehandle=self.file_name, h5_path=self.h5_path),
-        )
-
     def test_read_dict_hierarchical(self):
-        self.assertEqual(
-            {"key_b": 3},
-            read_nested_dict_from_hdf(file_name=self.file_name, h5_path=self.h5_path),
+        output = read_nested_dict_from_hdf(file_name=self.file_name, h5_path=self.h5_path)
+        self.assertTrue(
+            np.all(np.equal(output["a"], np.array([1, 2]))),
         )
-        self.assertEqual(
-            {"key_a": {"idx_0": 1, "idx_1": 2}, "key_b": 3, "key_c": {"key_d": 4}},
-            read_nested_dict_from_hdf(
-                file_name=self.file_name,
-                h5_path=self.h5_path,
-                group_paths=["key_a", "key_c"],
-            ),
+        self.assertEqual(output["b"], 3)
+        output = read_nested_dict_from_hdf(
+            file_name=self.file_name,
+            h5_path=self.h5_path,
+            group_paths=["c"],
         )
-        self.assertEqual(
-            {
-                "key_a": {"idx_0": 1, "idx_1": 2},
-                "key_b": 3,
-                "key_c": {"key_d": 4, "key_e": {"key_f": 5}},
-            },
-            read_nested_dict_from_hdf(
-                file_name=self.file_name,
-                h5_path=self.h5_path,
-                group_paths=["key_a", "key_c", "key_c/key_e"],
-            ),
+        self.assertTrue(
+            np.all(np.equal(output["a"], np.array([1, 2]))),
         )
-        self.assertEqual(
-            {
-                "key_a": {"idx_0": 1, "idx_1": 2},
-                "key_b": 3,
-                "key_c": {"key_d": 4, "key_e": {"key_f": 5}},
-            },
-            read_nested_dict_from_hdf(
-                file_name=self.file_name,
-                h5_path=self.h5_path,
-                recursive=True,
-            ),
+        self.assertEqual(output["b"], 3)
+        self.assertTrue(
+            np.all(np.equal(output["c"]["d"], np.array([4, 5]))),
+        )
+        self.assertTrue(
+            np.all(np.equal(output["c"]["e"], np.array([6, 7]))),
+        )
+        output = read_nested_dict_from_hdf(
+            file_name=self.file_name,
+            h5_path=self.h5_path,
+            recursive=True,
+        )
+        self.assertTrue(
+            np.all(np.equal(output["a"], np.array([1, 2]))),
+        )
+        self.assertEqual(output["b"], 3)
+        self.assertTrue(
+            np.all(np.equal(output["c"]["d"], np.array([4, 5]))),
+        )
+        self.assertTrue(
+            np.all(np.equal(output["c"]["e"], np.array([6, 7]))),
         )
 
     def test_write_overwrite_error(self):
@@ -515,14 +512,11 @@ class TestBasePartialRead(TestCase):
         self.assertEqual(
             get_hdf5_raw_content(file_name=self.file_name),
             [
-                {"data_hierarchical": {"TITLE": "dict"}},
-                {"data_hierarchical/key_a": {"TITLE": "list"}},
-                {"data_hierarchical/key_a/idx_0": {"TITLE": "int"}},
-                {"data_hierarchical/key_a/idx_1": {"TITLE": "int"}},
-                {"data_hierarchical/key_b": {"TITLE": "int"}},
-                {"data_hierarchical/key_c": {"TITLE": "dict"}},
-                {"data_hierarchical/key_c/key_d": {"TITLE": "int"}},
-                {"data_hierarchical/key_c/key_e": {"TITLE": "dict"}},
-                {"data_hierarchical/key_c/key_e/key_f": {"TITLE": "int"}},
+                {"data_hierarchical": {}},
+                {"data_hierarchical/a": {"TITLE": "ndarray"}},
+                {"data_hierarchical/b": {"TITLE": "int"}},
+                {"data_hierarchical/c": {}},
+                {"data_hierarchical/c/d": {"TITLE": "ndarray"}},
+                {"data_hierarchical/c/e": {"TITLE": "ndarray"}},
             ],
         )
