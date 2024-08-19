@@ -3,6 +3,7 @@ import numpy as np
 import h5py
 from unittest import TestCase
 import posixpath
+import h5io
 from h5io_browser import (
     delete_item,
     list_hdf,
@@ -10,7 +11,7 @@ from h5io_browser import (
     read_nested_dict_from_hdf,
     write_dict_to_hdf,
 )
-from h5io_browser.base import _get_hdf_content, _is_ragged_in_1st_dim_only, _read_hdf
+from h5io_browser.base import _get_hdf_content, _is_ragged_in_1st_dim_only, _read_hdf, _write_hdf
 
 
 def get_hdf5_raw_content(file_name):
@@ -398,3 +399,125 @@ class TestBaseJSON(TestCase):
         nodes, groups = list_hdf(file_name=self.file_name, h5_path="/data_json")
         self.assertEqual(groups, [])
         self.assertEqual(nodes, ["/data_json/a"])
+
+
+class TestCompatibility(TestCase):
+    def setUp(self):
+        self.file_name = "testcomp.h5"
+        self.data = {
+            "array": np.ones(4) * 42,
+            "b": 42,
+        }
+        self.h5_path = "h5io"
+        h5io.write_hdf5("testcomp.h5", self.data)
+
+    def test_h5io(self):
+        dataread = h5io.read_hdf5(self.file_name, self.h5_path)
+        for k, v in self.data.items():
+            if isinstance(v, np.ndarray):
+                self.assertTrue(all(np.equal(v, dataread[k])))
+            else:
+                self.assertTrue(v == dataread[k])
+
+    def test_read_dict_from_hdf(self):
+        dataread = read_dict_from_hdf(self.file_name, self.h5_path)
+        for k, v in self.data.items():
+            if isinstance(v, np.ndarray):
+                self.assertTrue(all(np.equal(v, dataread[self.h5_path][k])))
+            else:
+                self.assertTrue(v == dataread[self.h5_path][k])
+
+    def test_read_nested_dict_from_hdf(self):
+        dataread = read_nested_dict_from_hdf(self.file_name, self.h5_path)
+        for k, v in self.data.items():
+            if isinstance(v, np.ndarray):
+                self.assertTrue(all(np.equal(v, dataread[self.h5_path][k])))
+            else:
+                self.assertTrue(v == dataread[self.h5_path][k])
+
+    def tearDown(self):
+        os.remove(self.file_name)
+
+
+class TestBasePartialRead(TestCase):
+    def setUp(self):
+        self.file_name = "test_write_hdf5.h5"
+        self.h5_path = "data_hierarchical"
+        self.data_hierarchical = {"a": [1, 2], "b": 3, "c": {"d": 4, "e": {"f": 5}}}
+        _write_hdf(
+            hdf_filehandle=self.file_name,
+            data=self.data_hierarchical,
+            h5_path=self.h5_path,
+        )
+
+    def tearDown(self):
+        os.remove(self.file_name)
+
+    def test_read_hierarchical(self):
+        self.assertEqual(
+            self.data_hierarchical,
+            _read_hdf(hdf_filehandle=self.file_name, h5_path=self.h5_path),
+        )
+
+    def test_read_dict_hierarchical(self):
+        self.assertEqual(
+            {"key_b": 3},
+            read_nested_dict_from_hdf(file_name=self.file_name, h5_path=self.h5_path),
+        )
+        self.assertEqual(
+            {"key_a": {"idx_0": 1, "idx_1": 2}, "key_b": 3, "key_c": {"key_d": 4}},
+            read_nested_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=self.h5_path,
+                group_paths=["key_a", "key_c"],
+            ),
+        )
+        self.assertEqual(
+            {
+                "key_a": {"idx_0": 1, "idx_1": 2},
+                "key_b": 3,
+                "key_c": {"key_d": 4, "key_e": {"key_f": 5}},
+            },
+            read_nested_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=self.h5_path,
+                group_paths=["key_a", "key_c", "key_c/key_e"],
+            ),
+        )
+        self.assertEqual(
+            {
+                "key_a": {"idx_0": 1, "idx_1": 2},
+                "key_b": 3,
+                "key_c": {"key_d": 4, "key_e": {"key_f": 5}},
+            },
+            read_nested_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=self.h5_path,
+                recursive=True,
+            ),
+        )
+
+    def test_write_overwrite_error(self):
+        with self.assertRaises(OSError):
+            _write_hdf(
+                hdf_filehandle=self.file_name,
+                data=self.data_hierarchical,
+                h5_path=self.h5_path,
+                overwrite=False,
+            )
+
+    def test_hdf5_structure(self):
+        self.assertEqual(
+            get_hdf5_raw_content(file_name=self.file_name),
+            [
+                {"data_hierarchical": {"TITLE": "dict"}},
+                {"data_hierarchical/key_a": {"TITLE": "list"}},
+                {"data_hierarchical/key_a/idx_0": {"TITLE": "int"}},
+                {"data_hierarchical/key_a/idx_1": {"TITLE": "int"}},
+                {"data_hierarchical/key_b": {"TITLE": "int"}},
+                {"data_hierarchical/key_c": {"TITLE": "dict"}},
+                {"data_hierarchical/key_c/key_d": {"TITLE": "int"}},
+                {"data_hierarchical/key_c/key_e": {"TITLE": "dict"}},
+                {"data_hierarchical/key_c/key_e/key_f": {"TITLE": "int"}},
+            ],
+        )
