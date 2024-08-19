@@ -496,9 +496,7 @@ class TestBasePartialRead(TestCase):
         os.remove(self.file_name)
 
     def test_read_dict_hierarchical(self):
-        output = read_dict_from_hdf(
-            file_name=self.file_name, h5_path=self.h5_path
-        )
+        output = read_dict_from_hdf(file_name=self.file_name, h5_path=self.h5_path)
         self.assertTrue(
             np.all(np.equal(output["a"], np.array([1, 2]))),
         )

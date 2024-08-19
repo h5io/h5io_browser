@@ -4,11 +4,12 @@ from collections.abc import MutableMapping
 from typing import Any, Dict, List, Union
 
 import h5py
+
 from h5io_browser.base import (
     _open_hdf,
+    _read_dict_from_open_hdf,
     delete_item,
     list_hdf,
-    _read_dict_from_open_hdf,
     write_dict_to_hdf,
 )
 
@@ -331,7 +332,10 @@ class Pointer(MutableMapping):
         try:
             with h5py.File(self._file_name, "r") as hdf:
                 path_dict = _read_dict_from_open_hdf(
-                    hdf_filehandle=hdf, h5_path=self._h5_path, recursive=True, slash="ignore"
+                    hdf_filehandle=hdf,
+                    h5_path=self._h5_path,
+                    recursive=True,
+                    slash="ignore",
                 )
         except (FileNotFoundError, KeyError):
             return {}
@@ -411,7 +415,10 @@ class Pointer(MutableMapping):
         try:
             with h5py.File(self._file_name, "r") as hdf:
                 data_dict = _read_dict_from_open_hdf(
-                    hdf_filehandle=hdf, h5_path=h5_path_new, recursive=False, slash="ignore"
+                    hdf_filehandle=hdf,
+                    h5_path=h5_path_new,
+                    recursive=False,
+                    slash="ignore",
                 )
             if len(data_dict) > 1:
                 return get_hierarchical_dict(
