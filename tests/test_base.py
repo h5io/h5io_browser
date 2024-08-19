@@ -11,7 +11,12 @@ from h5io_browser import (
     read_nested_dict_from_hdf,
     write_dict_to_hdf,
 )
-from h5io_browser.base import _get_hdf_content, _is_ragged_in_1st_dim_only, _read_hdf, _write_hdf
+from h5io_browser.base import (
+    _get_hdf_content,
+    _is_ragged_in_1st_dim_only,
+    _read_hdf,
+    _write_hdf,
+)
 
 
 def get_hdf5_raw_content(file_name):
