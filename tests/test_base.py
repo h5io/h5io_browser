@@ -12,6 +12,7 @@ from h5io_browser import (
     write_dict_to_hdf,
 )
 from h5io_browser.base import (
+    WithOpenHDF,
     _get_hdf_content,
     _is_ragged_in_1st_dim_only,
     _read_dict_from_open_hdf,
@@ -140,72 +141,73 @@ class TestBaseHierachical(TestCase):
         )
 
     def test_read_nested_dict_hierarchical(self):
-        self.assertEqual(
-            {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}},
-            read_dict_from_hdf(
-                file_name=self.file_name,
-                h5_path=self.h5_path,
-                recursive=True,
-            ),
-        )
-        self.assertEqual(
-            {"data_hierarchical": {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}}},
-            read_dict_from_hdf(
-                file_name=self.file_name,
-                h5_path="/",
-                recursive=True,
-            ),
-        )
-        self.assertEqual(
-            {"d": 4, "e": 5},
-            read_dict_from_hdf(
-                file_name=self.file_name,
-                h5_path=posixpath.join(self.h5_path, "c"),
-                recursive=True,
-            ),
-        )
-        self.assertEqual(
-            {"a": [1, 2], "b": 3},
-            read_dict_from_hdf(
-                file_name=self.file_name,
-                h5_path=self.h5_path,
-                recursive=False,
-            ),
-        )
-        self.assertEqual(
-            {"a": [1, 2]},
-            read_dict_from_hdf(
-                file_name=self.file_name,
-                h5_path=posixpath.join(self.h5_path, "a"),
-                recursive=False,
-            ),
-        )
-        self.assertEqual(
-            {"b": 3},
-            read_dict_from_hdf(
-                file_name=self.file_name,
-                h5_path=posixpath.join(self.h5_path, "b"),
-                recursive=False,
-            ),
-        )
-        self.assertEqual(
-            {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}},
-            read_dict_from_hdf(
-                file_name=self.file_name,
-                h5_path=self.h5_path,
-                group_paths=[posixpath.join(self.h5_path, "c")],
-                recursive=False,
-            ),
-        )
-        self.assertEqual(
-            {"data_hierarchical": {"c": {"d": 4, "e": 5}}},
-            read_dict_from_hdf(
-                file_name=self.file_name,
-                h5_path="/",
-                group_paths=[posixpath.join(self.h5_path, "c")],
-                recursive=False,
-            ),
-        )
+        with WithOpenHDF(self.file_name):
+            self.assertEqual(
+                {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}},
+                read_dict_from_hdf(
+                    file_name=self.file_name,
+                    h5_path=self.h5_path,
+                    recursive=True,
+                ),
+            )
+            self.assertEqual(
+                {"data_hierarchical": {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}}},
+                read_dict_from_hdf(
+                    file_name=self.file_name,
+                    h5_path="/",
+                    recursive=True,
+                ),
+            )
+            self.assertEqual(
+                {"d": 4, "e": 5},
+                read_dict_from_hdf(
+                    file_name=self.file_name,
+                    h5_path=posixpath.join(self.h5_path, "c"),
+                    recursive=True,
+                ),
+            )
+            self.assertEqual(
+                {"a": [1, 2], "b": 3},
+                read_dict_from_hdf(
+                    file_name=self.file_name,
+                    h5_path=self.h5_path,
+                    recursive=False,
+                ),
+            )
+            self.assertEqual(
+                {"a": [1, 2]},
+                read_dict_from_hdf(
+                    file_name=self.file_name,
+                    h5_path=posixpath.join(self.h5_path, "a"),
+                    recursive=False,
+                ),
+            )
+            self.assertEqual(
+                {"b": 3},
+                read_dict_from_hdf(
+                    file_name=self.file_name,
+                    h5_path=posixpath.join(self.h5_path, "b"),
+                    recursive=False,
+                ),
+            )
+            self.assertEqual(
+                {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}},
+                read_dict_from_hdf(
+                    file_name=self.file_name,
+                    h5_path=self.h5_path,
+                    group_paths=[posixpath.join(self.h5_path, "c")],
+                    recursive=False,
+                ),
+            )
+            self.assertEqual(
+                {"data_hierarchical": {"c": {"d": 4, "e": 5}}},
+                read_dict_from_hdf(
+                    file_name=self.file_name,
+                    h5_path="/",
+                    group_paths=[posixpath.join(self.h5_path, "c")],
+                    recursive=False,
+                ),
+            )
 
     def test_read_hdf(self):
         self.assertEqual(

@@ -93,7 +93,8 @@ def read_dict_from_hdf(
     """
     if h5_path[0] != "/":
         h5_path = "/" + h5_path
-    with h5py.File(file_name, "r") as hdf:
+    # with h5py.File(file_name, "r") as hdf:
+    with _open_hdf(file_name, "r", swmr=True) as hdf:
         group_attrs_dict = hdf[h5_path].attrs
         if (
             "TITLE" in group_attrs_dict.keys()
@@ -229,6 +230,44 @@ def _merge_nested_dict(main_dict: dict, add_dict: dict) -> dict:
             main_dict[k] = v
     return main_dict
 
+from collections import defaultdict
+_FILE_HANDLE_CACHE_COUNTER = defaultdict(int)
+_FILE_HANDLE_CACHE = {}
+import threading
+_FILE_HANDLE_CACHE_LOCK = threading.RLock()
+
+import contextlib
+@contextlib.contextmanager
+def WithOpenHDF(filename: str, mode: str = "r", swmr: bool = False):
+    filename = os.path.realpath(os.path.abspath(filename))
+    with _FILE_HANDLE_CACHE_LOCK:
+        file_is_open = filename in _FILE_HANDLE_CACHE
+    # File already cached, someone above us opened it and will clean it up, we just need to pass it down
+    if file_is_open:
+        # print("EVERYBODY HIT THE CACHE")
+        with _FILE_HANDLE_CACHE_LOCK:
+            handle = _FILE_HANDLE_CACHE[filename]
+        assert mode == handle.mode
+        if swmr != handle.swmr_mode:
+            print("WARNING: Found a open handle, but swmr mode different!")
+        yield handle
+    else:
+        with _open_hdf(filename, mode, swmr) as handle:
+            with _FILE_HANDLE_CACHE_LOCK:
+                _FILE_HANDLE_CACHE[filename] = handle
+            try:
+                # Monkey patch close so that downstream code can use the handle as a context manager without closing the
+                # file we want to cache
+                handle.close = lambda: None
+                yield handle
+            finally:
+                # deleting the *instance* attribute we added above, afterwards close will resolve to the class attr that is
+                # the method
+                del handle.close
+                with _FILE_HANDLE_CACHE_LOCK:
+                    del _FILE_HANDLE_CACHE[filename]
+                    count = _FILE_HANDLE_CACHE_COUNTER.pop(filename, 0)
+                print(f"Saved {count} open on {filename}")
 
 def _open_hdf(filename: str, mode: str = "r", swmr: bool = False) -> h5py.File:
     """
@@ -247,6 +286,13 @@ def _open_hdf(filename: str, mode: str = "r", swmr: bool = False) -> h5py.File:
     Returns:
         h5py.File: open HDF5 file object
     """
+    filename = os.path.realpath(os.path.abspath(filename))
+    with _FILE_HANDLE_CACHE_LOCK:
+        if filename in _FILE_HANDLE_CACHE:
+            # print("THE CACHE STRIKES BACK", filename)
+            _FILE_HANDLE_CACHE_COUNTER[filename] += 1
+            return _FILE_HANDLE_CACHE[filename]
+    # print("Open file:", filename)
     if swmr and mode != "r":
         store = h5py.File(name=filename, mode=mode, libver="latest")
         store.swmr_mode = True
@@ -271,6 +317,8 @@ def _read_hdf(
         object:     The loaded data. Can be of any type supported by ``write_hdf5``.
     """
     file_name = _get_filename_from_filehandle(hdf_filehandle=hdf_filehandle)
+    if isinstance(hdf_filehandle, str):
+        hdf_filehandle = _open_hdf(hdf_filehandle, mode="r", swmr=True)
     return _retry(
         lambda: h5io.read_hdf5(
             fname=hdf_filehandle,
