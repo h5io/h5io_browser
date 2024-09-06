@@ -12,7 +12,7 @@ from h5io_browser import (
     write_dict_to_hdf,
 )
 from h5io_browser.base import (
-    WithOpenHDF,
+    CachedHDF,
     _get_hdf_content,
     _is_ragged_in_1st_dim_only,
     _read_dict_from_open_hdf,
@@ -141,7 +141,7 @@ class TestBaseHierachical(TestCase):
         )
 
     def test_read_nested_dict_hierarchical(self):
-        with WithOpenHDF(self.file_name):
+        with CachedHDF(self.file_name):
             self.assertEqual(
                 {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}},
                 read_dict_from_hdf(

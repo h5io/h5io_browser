@@ -233,15 +233,12 @@ def _merge_nested_dict(main_dict: dict, add_dict: dict) -> dict:
 from collections import defaultdict
 _FILE_HANDLE_CACHE_COUNTER = defaultdict(int)
 _FILE_HANDLE_CACHE = {}
-import threading
-_FILE_HANDLE_CACHE_LOCK = threading.RLock()
 
 import contextlib
 @contextlib.contextmanager
-def WithOpenHDF(filename: str, mode: str = "r", swmr: bool = False):
+def CachedHDF(filename: str, mode: str = "r", swmr: bool = False):
     filename = os.path.realpath(os.path.abspath(filename))
-    with _FILE_HANDLE_CACHE_LOCK:
-        handle = _FILE_HANDLE_CACHE.pop(filename, None)
+    handle = _FILE_HANDLE_CACHE.pop(filename, None)
     # File already cached, someone above us opened it and will clean it up, we just need to pass it down
     if handle is not None:
         # print("EVERYBODY HIT THE CACHE")
@@ -250,20 +247,18 @@ def WithOpenHDF(filename: str, mode: str = "r", swmr: bool = False):
         yield handle
     else:
         with _open_hdf(filename, mode, swmr) as handle:
-            with _FILE_HANDLE_CACHE_LOCK:
-                _FILE_HANDLE_CACHE[filename] = handle
-                # Monkey patch close so that downstream code can use the handle as a context manager without closing the
-                # file we want to cache
-                handle.close = lambda: None
+            _FILE_HANDLE_CACHE[filename] = handle
+            # Monkey patch close so that downstream code can use the handle as a context manager without closing the
+            # file we want to cache
+            handle.close = lambda: None
             try:
                 yield handle
             finally:
-                with _FILE_HANDLE_CACHE_LOCK:
-                    del _FILE_HANDLE_CACHE[filename]
-                    # deleting the *instance* attribute we added above, afterwards close will resolve to the class attr that is
-                    # the method
-                    del handle.close
-                    count = _FILE_HANDLE_CACHE_COUNTER.pop(filename, 0)
+                del _FILE_HANDLE_CACHE[filename]
+                # deleting the *instance* attribute we added above, afterwards close will resolve to the class attr that is
+                # the method
+                del handle.close
+                count = _FILE_HANDLE_CACHE_COUNTER.pop(filename, 0)
                 print(f"Saved {count} open on {filename}")
 
 def _open_hdf(filename: str, mode: str = "r", swmr: bool = False) -> h5py.File:
