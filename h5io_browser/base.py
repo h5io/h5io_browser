@@ -254,6 +254,9 @@ def CachedHDF(filename: str, mode: str = "r", swmr: bool = False):
             try:
                 yield handle
             finally:
+                if not handle: # HDF file are true-ish when open, false-ish when not
+                    print("ALARM, ALARM!")
+
                 del _FILE_HANDLE_CACHE[filename]
                 # deleting the *instance* attribute we added above, afterwards close will resolve to the class attr that is
                 # the method
@@ -278,12 +281,6 @@ def _open_hdf(filename: str, mode: str = "r", swmr: bool = False) -> h5py.File:
     Returns:
         h5py.File: open HDF5 file object
     """
-    filename = os.path.realpath(os.path.abspath(filename))
-    with _FILE_HANDLE_CACHE_LOCK:
-        if filename in _FILE_HANDLE_CACHE:
-            # print("THE CACHE STRIKES BACK", filename)
-            _FILE_HANDLE_CACHE_COUNTER[filename] += 1
-            return _FILE_HANDLE_CACHE[filename]
     # print("Open file:", filename)
     if swmr and mode != "r":
         store = h5py.File(name=filename, mode=mode, libver="latest")
@@ -292,6 +289,15 @@ def _open_hdf(filename: str, mode: str = "r", swmr: bool = False) -> h5py.File:
     else:
         return h5py.File(name=filename, mode=mode, libver="latest", swmr=swmr)
 
+import functools
+functools.wraps(_open_hdf)
+def open_hdf(filename: str, mode: str = "r", swmr: bool = False) -> contextlib.AbstractContextManager[h5py.File]:
+    filename = os.path.realpath(os.path.abspath(filename))
+    if filename in _FILE_HANDLE_CACHE:
+        # print("THE CACHE STRIKES BACK", filename)
+        _FILE_HANDLE_CACHE_COUNTER[filename] += 1
+        return contextlib.nullcontext(_FILE_HANDLE_CACHE[filename])
+    return _open_hdf(filename, mode, swmr)
 
 def _read_hdf(
     hdf_filehandle: Union[str, h5py.File], h5_path: str, slash: str = "ignore"
