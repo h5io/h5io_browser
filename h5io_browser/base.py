@@ -248,19 +248,12 @@ def CachedHDF(filename: str, mode: str = "r", swmr: bool = False):
     else:
         with _open_hdf(filename, mode, swmr) as handle:
             _FILE_HANDLE_CACHE[filename] = handle
-            # Monkey patch close so that downstream code can use the handle as a context manager without closing the
-            # file we want to cache
-            handle.close = lambda: None
             try:
                 yield handle
             finally:
                 if not handle: # HDF file are true-ish when open, false-ish when not
                     print("ALARM, ALARM!")
-
                 del _FILE_HANDLE_CACHE[filename]
-                # deleting the *instance* attribute we added above, afterwards close will resolve to the class attr that is
-                # the method
-                del handle.close
                 count = _FILE_HANDLE_CACHE_COUNTER.pop(filename, 0)
                 print(f"Saved {count} open on {filename}")
 
