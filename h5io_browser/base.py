@@ -316,18 +316,21 @@ def _read_hdf(
     """
     file_name = _get_filename_from_filehandle(hdf_filehandle=hdf_filehandle)
     if isinstance(hdf_filehandle, str):
-        hdf_filehandle = _open_hdf(hdf_filehandle, mode="r", swmr=True)
-    return _retry(
-        lambda: h5io.read_hdf5(
-            fname=hdf_filehandle,
-            title=h5_path,
-            slash=slash,
-        ),
-        error=BlockingIOError,
-        msg=f"Two or more processes tried to access the file {file_name}.",
-        at_most=10,
-        delay=1,
-    )
+        hdf_context = _open_hdf(hdf_filehandle, mode="r", swmr=True)
+    else:
+        hdf_context = contextlib.nullcontext(hdf_filehandle)
+    with hdf_context as hdf_filehandle:
+        return _retry(
+            lambda: h5io.read_hdf5(
+                fname=hdf_filehandle,
+                title=h5_path,
+                slash=slash,
+            ),
+            error=BlockingIOError,
+            msg=f"Two or more processes tried to access the file {file_name}.",
+            at_most=10,
+            delay=1,
+        )
 
 
 def _read_dict_from_open_hdf(hdf_filehandle, h5_path, recursive=False, slash="ignore"):
