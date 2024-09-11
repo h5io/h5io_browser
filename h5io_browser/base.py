@@ -43,8 +43,13 @@ def delete_item(file_name: str, h5_path: str) -> None:
 
 
 def list_hdf(
-    file_name: str, h5_path: str, recursive: Union[bool, int] = False, return_types: bool = False
-) -> Union[Tuple[List[str], List[str]], Tuple[List[str], List[str], List[str], List[str]]]:
+    file_name: str,
+    h5_path: str,
+    recursive: Union[bool, int] = False,
+    return_types: bool = False,
+) -> Union[
+    Tuple[List[str], List[str]], Tuple[List[str], List[str], List[str], List[str]]
+]:
     """
     List HDF5 nodes and HDF5 groups of a given HDF5 file at a given h5_path
 
@@ -63,7 +68,9 @@ def list_hdf(
     if os.path.exists(file_name):
         with h5py.File(file_name, "r") as hdf:
             try:
-                return _get_hdf_content(hdf=hdf[h5_path], recursive=recursive, return_types=return_types)
+                return _get_hdf_content(
+                    hdf=hdf[h5_path], recursive=recursive, return_types=return_types
+                )
             except KeyError:
                 if return_types:
                     return [], [], [], []
@@ -414,7 +421,11 @@ def _write_hdf5_with_json_support(
         ) from None
 
 
-def _list_h5path(hdf: Union[h5py.File, h5py.Group], return_types: bool = False) -> Union[Tuple[List[str], List[str]], Tuple[List[str], List[str], List[str], List[str]]]:
+def _list_h5path(
+    hdf: Union[h5py.File, h5py.Group], return_types: bool = False
+) -> Union[
+    Tuple[List[str], List[str]], Tuple[List[str], List[str], List[str], List[str]]
+]:
     """
     List groups and nodes in a given HDF5 path
 
@@ -472,8 +483,12 @@ def _get_hdf_content(
     recursive: Union[bool, int] = False,
     only_groups: bool = False,
     only_nodes: bool = False,
-    return_types: bool = False
-) -> Union[List[str], Tuple[List[str], List[str]], Tuple[List[str], List[str], List[str], List[str]]]:
+    return_types: bool = False,
+) -> Union[
+    List[str],
+    Tuple[List[str], List[str]],
+    Tuple[List[str], List[str], List[str], List[str]],
+]:
     """
     Get all sub-groups of a given HDF5 path
 
@@ -506,9 +521,16 @@ def _get_hdf_content(
             recursive -= 1
         group_lst, group_types_lst = [], []
         if return_types:
-            nodes_lst, nodes_types_lst, groups_to_iterate_lst, group_types_to_iterate_lst = _list_h5path(hdf=hdf, return_types=return_types)
+            (
+                nodes_lst,
+                nodes_types_lst,
+                groups_to_iterate_lst,
+                group_types_to_iterate_lst,
+            ) = _list_h5path(hdf=hdf, return_types=return_types)
         else:
-            nodes_lst, groups_to_iterate_lst = _list_h5path(hdf=hdf, return_types=return_types)
+            nodes_lst, groups_to_iterate_lst = _list_h5path(
+                hdf=hdf, return_types=return_types
+            )
             nodes_types_lst = []
             group_types_to_iterate_lst = groups_to_iterate_lst
         for group, group_type in zip(groups_to_iterate_lst, group_types_to_iterate_lst):
@@ -545,19 +567,25 @@ def _get_hdf_content(
                 return nodes_lst, group_lst
     elif only_groups:
         if return_types:
-            _, _, group_lst, group_types_lst = _list_h5path(hdf=hdf, return_types=return_types)
+            _, _, group_lst, group_types_lst = _list_h5path(
+                hdf=hdf, return_types=return_types
+            )
             return group_lst, group_types_lst
         else:
             return _list_h5path(hdf=hdf, return_types=return_types)[1]
     elif only_nodes:
         if return_types:
-            nodes_lst, nodes_types_lst, _, _ = _list_h5path(hdf=hdf, return_types=return_types)
+            nodes_lst, nodes_types_lst, _, _ = _list_h5path(
+                hdf=hdf, return_types=return_types
+            )
             return nodes_lst, nodes_types_lst
         else:
             return _list_h5path(hdf=hdf, return_types=return_types)[0]
     else:
         if return_types:
-            nodes_lst, nodes_types_lst, group_lst, group_types_lst = _list_h5path(hdf=hdf, return_types=return_types)
+            nodes_lst, nodes_types_lst, group_lst, group_types_lst = _list_h5path(
+                hdf=hdf, return_types=return_types
+            )
             return nodes_lst, nodes_types_lst, group_lst, group_types_lst
         else:
             nodes_lst, group_lst = _list_h5path(hdf=hdf, return_types=return_types)

@@ -301,32 +301,44 @@ class TestBaseHierachical(TestCase):
             list_hdf(file_name=self.file_name, h5_path="/", recursive=1.0)
 
     def test_list_group_types(self):
-        nodes, node_types, groups, group_types = list_hdf(file_name=self.file_name, h5_path=self.h5_path, return_types=True)
+        nodes, node_types, groups, group_types = list_hdf(
+            file_name=self.file_name, h5_path=self.h5_path, return_types=True
+        )
         self.assertEqual(groups, ["/data_hierarchical/c"])
         self.assertEqual(group_types, [None])
         self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b"])
         self.assertEqual(node_types, ["json", "int"])
-        nodes, node_types, groups, group_types = list_hdf(file_name=self.file_name, h5_path="/wrong_path", return_types=True)
+        nodes, node_types, groups, group_types = list_hdf(
+            file_name=self.file_name, h5_path="/wrong_path", return_types=True
+        )
         self.assertEqual(nodes, [])
         self.assertEqual(groups, [])
         self.assertEqual(node_types, [])
         self.assertEqual(group_types, [])
-        nodes, node_types, groups, group_types = list_hdf(file_name="empty.h5", h5_path=self.h5_path, return_types=True)
+        nodes, node_types, groups, group_types = list_hdf(
+            file_name="empty.h5", h5_path=self.h5_path, return_types=True
+        )
         self.assertEqual(nodes, [])
         self.assertEqual(groups, [])
         self.assertEqual(node_types, [])
         self.assertEqual(group_types, [])
-        nodes, node_types, groups, group_types = list_hdf(file_name=self.file_name, h5_path="/", return_types=True)
+        nodes, node_types, groups, group_types = list_hdf(
+            file_name=self.file_name, h5_path="/", return_types=True
+        )
         self.assertEqual(groups, ["/data_hierarchical"])
         self.assertEqual(nodes, [])
         self.assertEqual(node_types, [])
         self.assertEqual(group_types, [None])
-        nodes, node_types, groups, group_types = list_hdf(file_name=self.file_name, h5_path="/", recursive=1, return_types=True)
+        nodes, node_types, groups, group_types = list_hdf(
+            file_name=self.file_name, h5_path="/", recursive=1, return_types=True
+        )
         self.assertEqual(groups, ["/data_hierarchical", "/data_hierarchical/c"])
         self.assertEqual(group_types, [None, None])
         self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b"])
         self.assertEqual(node_types, ["json", "int"])
-        nodes, node_types, groups, group_types = list_hdf(file_name=self.file_name, h5_path="/", recursive=2, return_types=True)
+        nodes, node_types, groups, group_types = list_hdf(
+            file_name=self.file_name, h5_path="/", recursive=2, return_types=True
+        )
         self.assertEqual(groups, ["/data_hierarchical", "/data_hierarchical/c"])
         self.assertEqual(
             nodes,
@@ -337,10 +349,13 @@ class TestBaseHierachical(TestCase):
                 "/data_hierarchical/c/e",
             ],
         )
-        self.assertEqual(node_types, ['json', 'int', 'int', 'int'])
+        self.assertEqual(node_types, ["json", "int", "int", "int"])
         self.assertEqual(group_types, [None, None])
         nodes, node_types, groups, group_types = list_hdf(
-            file_name=self.file_name, h5_path=self.h5_path, recursive=True, return_types=True
+            file_name=self.file_name,
+            h5_path=self.h5_path,
+            recursive=True,
+            return_types=True,
         )
         self.assertEqual(groups, ["/data_hierarchical/c"])
         self.assertEqual(
@@ -352,7 +367,7 @@ class TestBaseHierachical(TestCase):
                 "/data_hierarchical/c/e",
             ],
         )
-        self.assertEqual(node_types, ['json', 'int', 'int', 'int'])
+        self.assertEqual(node_types, ["json", "int", "int", "int"])
         self.assertEqual(group_types, [None])
         nodes, node_types, groups, group_types = list_hdf(
             file_name=self.file_name,
