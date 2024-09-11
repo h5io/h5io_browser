@@ -549,8 +549,7 @@ def _match_pattern(path_lst: list, pattern: Optional[str] = None) -> list:
         list: List of paths which match the glob-syle pattern
     """
     if pattern is not None:
-        path_pattern = PurePath(pattern)
-        return [p for p in path_lst if PurePath(p).match(path_pattern=path_pattern)]
+        return [p for p in path_lst if PurePath(p).match(path_pattern=pattern)]
     else:
         return path_lst
 
