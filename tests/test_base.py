@@ -214,16 +214,13 @@ class TestBaseHierachical(TestCase):
                 file_name=self.file_name,
                 h5_path=self.h5_path,
                 recursive=True,
-                pattern="*/e"
+                pattern="*/e",
             ),
         )
         self.assertEqual(
             {"data_hierarchical": {"c": {"d": 4, "e": 5}}},
             read_dict_from_hdf(
-                file_name=self.file_name,
-                h5_path="/",
-                recursive=True,
-                pattern="*/*/*"
+                file_name=self.file_name, h5_path="/", recursive=True, pattern="*/*/*"
             ),
         )
         self.assertEqual(
@@ -375,16 +372,24 @@ class TestBaseHierachical(TestCase):
             list_hdf(file_name=self.file_name, h5_path="/", recursive=1.0)
 
     def test_list_hdf_pattern(self):
-        nodes, groups = list_hdf(file_name=self.file_name, h5_path=self.h5_path, pattern="*/*")
+        nodes, groups = list_hdf(
+            file_name=self.file_name, h5_path=self.h5_path, pattern="*/*"
+        )
         self.assertEqual(groups, ["/data_hierarchical/c"])
         self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b"])
-        nodes, groups = list_hdf(file_name=self.file_name, h5_path="/data_hierarchical", pattern="*/d")
+        nodes, groups = list_hdf(
+            file_name=self.file_name, h5_path="/data_hierarchical", pattern="*/d"
+        )
         self.assertEqual(nodes, [])
         self.assertEqual(groups, [])
-        nodes, groups = list_hdf(file_name=self.file_name, h5_path="/", recursive=1, pattern="*/c")
+        nodes, groups = list_hdf(
+            file_name=self.file_name, h5_path="/", recursive=1, pattern="*/c"
+        )
         self.assertEqual(groups, ["/data_hierarchical/c"])
         self.assertEqual(nodes, [])
-        nodes, groups = list_hdf(file_name=self.file_name, h5_path="/", recursive=2, pattern="*/c/*")
+        nodes, groups = list_hdf(
+            file_name=self.file_name, h5_path="/", recursive=2, pattern="*/c/*"
+        )
         self.assertEqual(groups, [])
         self.assertEqual(
             nodes,

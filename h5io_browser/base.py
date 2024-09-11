@@ -1,10 +1,10 @@
 import os
-from pathlib import PurePath
 import posixpath
 import sys
 import time
 import warnings
 from itertools import count
+from pathlib import PurePath
 from typing import Any, Callable, List, Optional, Tuple, Type, TypeVar, Union
 
 import h5io
@@ -44,7 +44,10 @@ def delete_item(file_name: str, h5_path: str) -> None:
 
 
 def list_hdf(
-    file_name: str, h5_path: str, recursive: Union[bool, int] = False, pattern: Optional[str] = None,
+    file_name: str,
+    h5_path: str,
+    recursive: Union[bool, int] = False,
+    pattern: Optional[str] = None,
 ) -> Tuple[List[str], List[str]]:
     """
     List HDF5 nodes and HDF5 groups of a given HDF5 file at a given h5_path
@@ -62,7 +65,9 @@ def list_hdf(
     if os.path.exists(file_name):
         with h5py.File(file_name, "r") as hdf:
             try:
-                return _get_hdf_content(hdf=hdf[h5_path], recursive=recursive, pattern=pattern)
+                return _get_hdf_content(
+                    hdf=hdf[h5_path], recursive=recursive, pattern=pattern
+                )
             except KeyError:
                 return [], []
     else:
@@ -488,14 +493,18 @@ def _get_hdf_content(
         elif only_nodes:
             return _match_pattern(path_lst=nodes_lst, pattern=pattern)
         else:
-            return _match_pattern(path_lst=nodes_lst, pattern=pattern), _match_pattern(path_lst=group_lst, pattern=pattern)
+            return _match_pattern(path_lst=nodes_lst, pattern=pattern), _match_pattern(
+                path_lst=group_lst, pattern=pattern
+            )
     elif only_groups:
         return _match_pattern(path_lst=_list_h5path(hdf=hdf)[1], pattern=pattern)
     elif only_nodes:
         return _match_pattern(path_lst=_list_h5path(hdf=hdf)[0], pattern=pattern)
     else:
         nodes_lst, group_lst = _list_h5path(hdf=hdf)
-        return _match_pattern(path_lst=nodes_lst, pattern=pattern), _match_pattern(path_lst=group_lst, pattern=pattern)
+        return _match_pattern(path_lst=nodes_lst, pattern=pattern), _match_pattern(
+            path_lst=group_lst, pattern=pattern
+        )
 
 
 def _check_json_conversion(value: Any) -> Tuple[Any, bool]:
