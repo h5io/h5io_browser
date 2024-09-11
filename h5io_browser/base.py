@@ -9,7 +9,6 @@ from typing import Any, Callable, List, Optional, Tuple, Type, TypeVar, Union
 import h5io
 import h5py
 import numpy as np
-from torch.return_types import return_types
 
 T = TypeVar("T")
 
