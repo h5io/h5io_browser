@@ -220,7 +220,7 @@ class TestBaseHierachical(TestCase):
         self.assertEqual(
             {"data_hierarchical": {"c": {"d": 4, "e": 5}}},
             read_dict_from_hdf(
-                file_name=self.file_name, h5_path="/", recursive=True, pattern="*/*/*"
+                file_name=self.file_name, h5_path="/", recursive=True, pattern="*/c/*"
             ),
         )
         self.assertEqual(
