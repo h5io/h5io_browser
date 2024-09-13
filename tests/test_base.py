@@ -207,6 +207,79 @@ class TestBaseHierachical(TestCase):
             ),
         )
 
+    def test_read_nested_dict_hierarchical_pattern(self):
+        self.assertEqual(
+            {"c": {"e": 5}},
+            read_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=self.h5_path,
+                recursive=True,
+                pattern="*/e",
+            ),
+        )
+        self.assertEqual(
+            {"data_hierarchical": {"c": {"d": 4, "e": 5}}},
+            read_dict_from_hdf(
+                file_name=self.file_name, h5_path="/", recursive=True, pattern="*/c/*"
+            ),
+        )
+        self.assertEqual(
+            {"d": 4},
+            read_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=posixpath.join(self.h5_path, "c"),
+                recursive=True,
+                pattern="*/d",
+            ),
+        )
+        self.assertEqual(
+            {"b": 3},
+            read_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=self.h5_path,
+                recursive=False,
+                pattern="*/b",
+            ),
+        )
+        self.assertEqual(
+            {"a": [1, 2]},
+            read_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=posixpath.join(self.h5_path, "a"),
+                recursive=False,
+                pattern="a",
+            ),
+        )
+        self.assertEqual(
+            {"b": 3},
+            read_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=posixpath.join(self.h5_path, "b"),
+                recursive=False,
+                pattern="*/b",
+            ),
+        )
+        self.assertEqual(
+            {"c": {"d": 4, "e": 5}},
+            read_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=self.h5_path,
+                group_paths=[posixpath.join(self.h5_path, "c")],
+                recursive=False,
+                pattern="*/c/*",
+            ),
+        )
+        self.assertEqual(
+            {"data_hierarchical": {"c": {"d": 4, "e": 5}}},
+            read_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path="/",
+                group_paths=[posixpath.join(self.h5_path, "c")],
+                recursive=False,
+                pattern="*/c/*",
+            ),
+        )
+
     def test_read_hdf(self):
         self.assertEqual(
             _read_hdf(
@@ -248,7 +321,7 @@ class TestBaseHierachical(TestCase):
             ],
         )
 
-    def test_list_groups(self):
+    def test_list_hdf(self):
         nodes, groups = list_hdf(file_name=self.file_name, h5_path=self.h5_path)
         self.assertEqual(groups, ["/data_hierarchical/c"])
         self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b"])
@@ -297,6 +370,34 @@ class TestBaseHierachical(TestCase):
         self.assertEqual(nodes, [])
         with self.assertRaises(TypeError):
             list_hdf(file_name=self.file_name, h5_path="/", recursive=1.0)
+
+    def test_list_hdf_pattern(self):
+        nodes, groups = list_hdf(
+            file_name=self.file_name, h5_path=self.h5_path, pattern="*/*"
+        )
+        self.assertEqual(groups, ["/data_hierarchical/c"])
+        self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b"])
+        nodes, groups = list_hdf(
+            file_name=self.file_name, h5_path="/data_hierarchical", pattern="*/d"
+        )
+        self.assertEqual(nodes, [])
+        self.assertEqual(groups, [])
+        nodes, groups = list_hdf(
+            file_name=self.file_name, h5_path="/", recursive=1, pattern="*/c"
+        )
+        self.assertEqual(groups, ["/data_hierarchical/c"])
+        self.assertEqual(nodes, [])
+        nodes, groups = list_hdf(
+            file_name=self.file_name, h5_path="/", recursive=2, pattern="*/c/*"
+        )
+        self.assertEqual(groups, [])
+        self.assertEqual(
+            nodes,
+            [
+                "/data_hierarchical/c/d",
+                "/data_hierarchical/c/e",
+            ],
+        )
 
     def test_get_hdf_content(self):
         with h5py.File(self.file_name, "r") as hdf:

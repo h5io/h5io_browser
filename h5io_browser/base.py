@@ -4,6 +4,7 @@ import sys
 import time
 import warnings
 from itertools import count
+from pathlib import PurePath
 from typing import Any, Callable, List, Optional, Tuple, Type, TypeVar, Union
 
 import h5io
@@ -43,16 +44,20 @@ def delete_item(file_name: str, h5_path: str) -> None:
 
 
 def list_hdf(
-    file_name: str, h5_path: str, recursive: Union[bool, int] = False
+    file_name: str,
+    h5_path: str,
+    recursive: Union[bool, int] = False,
+    pattern: Optional[str] = None,
 ) -> Tuple[List[str], List[str]]:
     """
     List HDF5 nodes and HDF5 groups of a given HDF5 file at a given h5_path
 
     Args:
-       file_name (str): Name of the file on disk
-       h5_path (str): Path to a group in the HDF5 file from where the data is read
-       recursive (bool/int): Recursively browse through the HDF5 file, either a boolean flag or an integer
+        file_name (str): Name of the file on disk
+        h5_path (str): Path to a group in the HDF5 file from where the data is read
+        recursive (bool/int): Recursively browse through the HDF5 file, either a boolean flag or an integer
                               which specifies the level of recursion.
+        pattern (str): Glob-style pattern nodes and groups have to match.
 
     Returns:
        (list, list): list of HDF5 nodes and list of HDF5 groups
@@ -60,7 +65,9 @@ def list_hdf(
     if os.path.exists(file_name):
         with h5py.File(file_name, "r") as hdf:
             try:
-                return _get_hdf_content(hdf=hdf[h5_path], recursive=recursive)
+                return _get_hdf_content(
+                    hdf=hdf[h5_path], recursive=recursive, pattern=pattern
+                )
             except KeyError:
                 return [], []
     else:
@@ -73,6 +80,7 @@ def read_dict_from_hdf(
     group_paths: List[str] = [],
     recursive: bool = False,
     slash: str = "ignore",
+    pattern: Optional[str] = None,
 ) -> dict:
     """
     Read data from HDF5 file into a dictionary - by default only the nodes are converted to dictionaries, additional
@@ -88,6 +96,7 @@ def read_dict_from_hdf(
                               which specifies the level of recursion.
        slash (str): 'ignore' | 'replace' Whether to replace the string {FWDSLASH} with the value /. This does
                     not apply to the top level name (title). If 'ignore', nothing will be replaced.
+        pattern (str): Glob-style pattern nodes have to match.
     Returns:
        dict:     The loaded data as nested dictionary. Can be of any type supported by ``write_hdf5``.
     """
@@ -118,6 +127,7 @@ def read_dict_from_hdf(
                         recursive=recursive,
                         only_nodes=True,
                     )
+            nodes_lst = _match_pattern(path_lst=nodes_lst, pattern=pattern)
             if len(nodes_lst) > 0:
                 return_dict = {}
                 for n in nodes_lst:
@@ -440,6 +450,7 @@ def _get_hdf_content(
     recursive: Union[bool, int] = False,
     only_groups: bool = False,
     only_nodes: bool = False,
+    pattern: Optional[str] = None,
 ) -> Union[List[str], Tuple[List[str], List[str]]]:
     """
     Get all sub-groups of a given HDF5 path
@@ -450,6 +461,7 @@ def _get_hdf_content(
                               which specifies the level of recursion.
         only_groups (bool): return only HDF5 groups
         only_nodes (bool): return only HDF5 nodes
+        pattern (str): Return nodes which have a HDF5 path which mateches against the provided glob-style pattern.
 
     Returns:
         list/(list, list): list of HDF5 groups or list of HDF5 nodes or tuple of both lists
@@ -477,17 +489,22 @@ def _get_hdf_content(
             nodes_lst += nodes
             group_lst += [group] + groups
         if only_groups:
-            return group_lst
+            return _match_pattern(path_lst=group_lst, pattern=pattern)
         elif only_nodes:
-            return nodes_lst
+            return _match_pattern(path_lst=nodes_lst, pattern=pattern)
         else:
-            return nodes_lst, group_lst
+            return _match_pattern(path_lst=nodes_lst, pattern=pattern), _match_pattern(
+                path_lst=group_lst, pattern=pattern
+            )
     elif only_groups:
-        return _list_h5path(hdf=hdf)[1]
+        return _match_pattern(path_lst=_list_h5path(hdf=hdf)[1], pattern=pattern)
     elif only_nodes:
-        return _list_h5path(hdf=hdf)[0]
+        return _match_pattern(path_lst=_list_h5path(hdf=hdf)[0], pattern=pattern)
     else:
-        return _list_h5path(hdf=hdf)
+        nodes_lst, group_lst = _list_h5path(hdf=hdf)
+        return _match_pattern(path_lst=nodes_lst, pattern=pattern), _match_pattern(
+            path_lst=group_lst, pattern=pattern
+        )
 
 
 def _check_json_conversion(value: Any) -> Tuple[Any, bool]:
@@ -518,6 +535,23 @@ def _check_json_conversion(value: Any) -> Tuple[Any, bool]:
     elif isinstance(value, tuple):
         value = list(value)
     return value, use_json
+
+
+def _match_pattern(path_lst: list, pattern: Optional[str] = None) -> list:
+    """
+    From a given list of HDF5 paths select the ones which match against the provided glob-style pattern.
+
+    Args:
+        path_lst (list): List of paths
+        pattern (str): Glob-style pattern for paths to match
+
+    Returns:
+        list: List of paths which match the glob-syle pattern
+    """
+    if pattern is not None:
+        return [p for p in path_lst if PurePath(p).match(path_pattern=pattern)]
+    else:
+        return path_lst
 
 
 def _is_ragged_in_1st_dim_only(value: Union[np.ndarray, list]) -> bool:
