@@ -230,8 +230,6 @@ def _merge_nested_dict(main_dict: dict, add_dict: dict) -> dict:
             main_dict[k] = v
     return main_dict
 
-from collections import defaultdict
-_FILE_HANDLE_CACHE_COUNTER = defaultdict(int)
 _FILE_HANDLE_CACHE = {}
 
 def _fetch_handle(filename, mode):
@@ -247,7 +245,6 @@ def _fetch_handle(filename, mode):
     for mode in acceptable_modes:
         handle = _FILE_HANDLE_CACHE.get((filename, mode), None)
         if handle is not None:
-            _FILE_HANDLE_CACHE_COUNTER[filename, mode] += 1
             return handle
 
 class HdfCacheWarning(UserWarning):
@@ -286,7 +283,6 @@ def CachedHDF(filename: str, mode: str = "r"):
         yield handle
     else:
         with _open_hdf(filename, mode, swmr=True) as handle:
-            _FILE_HANDLE_CACHE_COUNTER[filename, handle.mode] = 0
             _FILE_HANDLE_CACHE[filename, handle.mode] = handle
             try:
                 yield handle
@@ -298,8 +294,6 @@ def CachedHDF(filename: str, mode: str = "r"):
                                   "You should not manually close file handles obtained from this function.",
                                   category=HdfCacheWarning, stacklevel=2)
                 _FILE_HANDLE_CACHE.pop((filename, handle.mode), None)
-                count = _FILE_HANDLE_CACHE_COUNTER.pop((filename, handle.mode), 0)
-                print(f"Saved {count} open on {filename}")
 
 def _open_hdf(filename: str, mode: str = "r", swmr: bool = False) -> h5py.File:
     """
