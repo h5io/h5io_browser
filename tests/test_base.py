@@ -13,6 +13,7 @@ from h5io_browser import (
 )
 from h5io_browser.base import (
     CachedHDF,
+    open_hdf,
     _get_hdf_content,
     _is_ragged_in_1st_dim_only,
     _read_dict_from_open_hdf,
@@ -141,73 +142,72 @@ class TestBaseHierachical(TestCase):
         )
 
     def test_read_nested_dict_hierarchical(self):
-        with CachedHDF(self.file_name):
-            self.assertEqual(
-                {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}},
-                read_dict_from_hdf(
-                    file_name=self.file_name,
-                    h5_path=self.h5_path,
-                    recursive=True,
-                ),
-            )
-            self.assertEqual(
-                {"data_hierarchical": {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}}},
-                read_dict_from_hdf(
-                    file_name=self.file_name,
-                    h5_path="/",
-                    recursive=True,
-                ),
-            )
-            self.assertEqual(
-                {"d": 4, "e": 5},
-                read_dict_from_hdf(
-                    file_name=self.file_name,
-                    h5_path=posixpath.join(self.h5_path, "c"),
-                    recursive=True,
-                ),
-            )
-            self.assertEqual(
-                {"a": [1, 2], "b": 3},
-                read_dict_from_hdf(
-                    file_name=self.file_name,
-                    h5_path=self.h5_path,
-                    recursive=False,
-                ),
-            )
-            self.assertEqual(
-                {"a": [1, 2]},
-                read_dict_from_hdf(
-                    file_name=self.file_name,
-                    h5_path=posixpath.join(self.h5_path, "a"),
-                    recursive=False,
-                ),
-            )
-            self.assertEqual(
-                {"b": 3},
-                read_dict_from_hdf(
-                    file_name=self.file_name,
-                    h5_path=posixpath.join(self.h5_path, "b"),
-                    recursive=False,
-                ),
-            )
-            self.assertEqual(
-                {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}},
-                read_dict_from_hdf(
-                    file_name=self.file_name,
-                    h5_path=self.h5_path,
-                    group_paths=[posixpath.join(self.h5_path, "c")],
-                    recursive=False,
-                ),
-            )
-            self.assertEqual(
-                {"data_hierarchical": {"c": {"d": 4, "e": 5}}},
-                read_dict_from_hdf(
-                    file_name=self.file_name,
-                    h5_path="/",
-                    group_paths=[posixpath.join(self.h5_path, "c")],
-                    recursive=False,
-                ),
-            )
+        self.assertEqual(
+            {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}},
+            read_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=self.h5_path,
+                recursive=True,
+            ),
+        )
+        self.assertEqual(
+            {"data_hierarchical": {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}}},
+            read_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path="/",
+                recursive=True,
+            ),
+        )
+        self.assertEqual(
+            {"d": 4, "e": 5},
+            read_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=posixpath.join(self.h5_path, "c"),
+                recursive=True,
+            ),
+        )
+        self.assertEqual(
+            {"a": [1, 2], "b": 3},
+            read_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=self.h5_path,
+                recursive=False,
+            ),
+        )
+        self.assertEqual(
+            {"a": [1, 2]},
+            read_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=posixpath.join(self.h5_path, "a"),
+                recursive=False,
+            ),
+        )
+        self.assertEqual(
+            {"b": 3},
+            read_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=posixpath.join(self.h5_path, "b"),
+                recursive=False,
+            ),
+        )
+        self.assertEqual(
+            {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}},
+            read_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path=self.h5_path,
+                group_paths=[posixpath.join(self.h5_path, "c")],
+                recursive=False,
+            ),
+        )
+        self.assertEqual(
+            {"data_hierarchical": {"c": {"d": 4, "e": 5}}},
+            read_dict_from_hdf(
+                file_name=self.file_name,
+                h5_path="/",
+                group_paths=[posixpath.join(self.h5_path, "c")],
+                recursive=False,
+            ),
+        )
 
     def test_read_hdf(self):
         self.assertEqual(
@@ -441,7 +441,7 @@ class TestCompatibility(TestCase):
             "b": 42,
         }
         self.h5_path = "h5io"
-        h5io.write_hdf5("testcomp.h5", self.data)
+        h5io.write_hdf5(self.file_name, self.data)
 
     def test_h5io(self):
         dataread = h5io.read_hdf5(self.file_name, self.h5_path)
@@ -555,3 +555,26 @@ class TestBasePartialRead(TestCase):
                 {"data_hierarchical/c/e": {"TITLE": "ndarray"}},
             ],
         )
+
+
+class CachedTestMixin:
+    """
+    Run mixed in test cases, but open hdf file cache before each method.
+
+    WARNING: Assumes that cls.file_name is defined and is the only HDF file
+    accessed during all test methods.
+    """
+    def setUp(self):
+        super().setUp()
+        # Test with an append mode file cache, if test request read mode files
+        # it will still receive the cached handle
+        self.enterContext(CachedHDF(self.file_name, "a"))
+
+class TestBaseHierachicalCached(CachedTestMixin, TestBaseHierachical):
+    pass
+
+class TestBaseJSONCached(CachedTestMixin, TestBaseJSON):
+    pass
+
+class TestBasePartialRead(CachedTestMixin, TestBasePartialRead):
+    pass
