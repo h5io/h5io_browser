@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 import h5py
 from unittest import TestCase
@@ -568,7 +569,18 @@ class CachedTestMixin:
         super().setUp()
         # Test with an append mode file cache, if test request read mode files
         # it will still receive the cached handle
-        self.enterContext(CachedHDF(self.file_name, "a"))
+        cache = CachedHDF(self.file_name, "a")
+        if sys.version_info.major == 3 and sys.version_info.minor >= 11:
+            self.enterContext(cache)
+        else:
+            # Poor man's enterContext, because that only landed in 3.11
+            self._context = cache
+            cache.__enter__()
+
+    def tearDown(self):
+        if sys.version_info.major == 3 and sys.version_info.minor < 11:
+            self._context.__exit__(None, None, None)
+        super().tearDown()
 
 class TestBaseHierachicalCached(CachedTestMixin, TestBaseHierachical):
     pass
