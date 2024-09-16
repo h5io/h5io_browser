@@ -1,3 +1,4 @@
+import contextlib
 import os
 import posixpath
 import sys
@@ -234,27 +235,71 @@ from collections import defaultdict
 _FILE_HANDLE_CACHE_COUNTER = defaultdict(int)
 _FILE_HANDLE_CACHE = {}
 
-import contextlib
+def _fetch_handle(filename, mode):
+    """Look up handle with compatible mode."""
+    # lists which modes (of already cached open handles) are suitable for each of the requested modes
+    acceptable_modes = {
+            # we can also read from r+/a modes, but e.g. an a mode handle won't do for a r+ request, because r+ wants to
+            # create the file
+            "r": ["r", "r+", "a"],
+            "w": ["w", "r+", "a"],
+            "a": ["a", "r+"],
+    }.get(mode, [mode])
+    for mode in acceptable_modes:
+        handle = _FILE_HANDLE_CACHE.get((filename, mode), None)
+        if handle is not None:
+            _FILE_HANDLE_CACHE_COUNTER[filename, mode] += 1
+            return handle
+
+class HdfCacheWarning(UserWarning):
+    pass
+
 @contextlib.contextmanager
-def CachedHDF(filename: str, mode: str = "r", swmr: bool = False):
+def CachedHDF(filename: str, mode: str = "r"):
+    """
+    Cache a HDF5 file handle.
+
+    After entering a with statement with this context manager, all calls to :func:`.open_hdf` are rerouted to check
+    inside a (global) file handle cache.  File handles are cached separately for different modes, but as long as modes
+    are compatible open handles are preferred to opening multiple files (e.g. a cached append mode handle would be
+    returned from :func:`.open_hdf` when a read mode one is requested).
+
+    Yields the file handle.  The handle yielded from here or ones obtained from :func:`.open_hdf` with in the context
+    must not be explicitly closed.  If this is detected, the file is reopened and a warning is printed.
+
+    Single Writer Multiple Reader (SWMR) mode is implied in this context.
+
+    Args:
+        filename (str): Name of the file on disk
+        mode (str): r        Readonly, file must exist (default)
+                    r+       Read/write, file must exist
+                    w        Create file, truncate if exists
+                    w- or x  Create file, fail if exists
+                    a        Read/write if exists, create otherwise
+
+    Yields:
+        h5py.File: cached file handle
+    """
     filename = os.path.realpath(os.path.abspath(filename))
-    handle = _FILE_HANDLE_CACHE.pop(filename, None)
+    handle = _fetch_handle(filename, mode)
     # File already cached, someone above us opened it and will clean it up, we just need to pass it down
     if handle is not None:
-        # print("EVERYBODY HIT THE CACHE")
-        assert mode == handle.mode
-        handle.swmr_mode |= swmr
         yield handle
     else:
-        with _open_hdf(filename, mode, swmr) as handle:
-            _FILE_HANDLE_CACHE[filename] = handle
+        with _open_hdf(filename, mode, swmr=True) as handle:
+            _FILE_HANDLE_CACHE_COUNTER[filename, handle.mode] = 0
+            _FILE_HANDLE_CACHE[filename, handle.mode] = handle
             try:
                 yield handle
             finally:
-                if not handle: # HDF file are true-ish when open, false-ish when not
-                    print("ALARM, ALARM!")
-                del _FILE_HANDLE_CACHE[filename]
-                count = _FILE_HANDLE_CACHE_COUNTER.pop(filename, 0)
+                # HDF file are true-ish when open, false-ish when not
+                if not handle or handle not in _FILE_HANDLE_CACHE.values():
+                    warnings.warn("Cached file handle closed or no longer in cache. "
+                                  "This indicates a programming bug in a caller of open_hdf. "
+                                  "You should not manually close file handles obtained from this function.",
+                                  category=HdfCacheWarning, stacklevel=2)
+                _FILE_HANDLE_CACHE.pop((filename, handle.mode), None)
+                count = _FILE_HANDLE_CACHE_COUNTER.pop((filename, handle.mode), 0)
                 print(f"Saved {count} open on {filename}")
 
 def _open_hdf(filename: str, mode: str = "r", swmr: bool = False) -> h5py.File:
@@ -274,23 +319,53 @@ def _open_hdf(filename: str, mode: str = "r", swmr: bool = False) -> h5py.File:
     Returns:
         h5py.File: open HDF5 file object
     """
-    # print("Open file:", filename)
     if swmr and mode != "r":
-        store = h5py.File(name=filename, mode=mode, libver="latest")
-        store.swmr_mode = True
+        store = h5py.File(name=filename, mode=mode, libver="latest", swmr=False)
+        if not store.swmr_mode:
+            store.swmr_mode = True
         return store
     else:
         return h5py.File(name=filename, mode=mode, libver="latest", swmr=swmr)
 
-import functools
-functools.wraps(_open_hdf)
-def open_hdf(filename: str, mode: str = "r", swmr: bool = False) -> contextlib.AbstractContextManager[h5py.File]:
+def open_hdf(filename: str, mode: str = "r", swmr: bool = False, cache: bool = False) -> contextlib.AbstractContextManager[h5py.File]:
+    """
+    Open HDF5 file with optional caching.
+
+    When a matching file handle exists in the cache, it is always returned, no matter whether `cache` is given or not.
+
+    This function may return a bare file handle or it may return a context manager yielding a file handle, as a
+    consequence calling code must not try to call normal hdf functions or methods on the return value, but always unwrap
+    it first by entering a with statement.
+
+    Args:
+        filename (str): Name of the file on disk, or file-like object.  Note: for files created with the 'core' driver,
+                        HDF5 still requires this be non-empty.
+        mode (str): r        Readonly, file must exist (default)
+                    r+       Read/write, file must exist
+                    w        Create file, truncate if exists
+                    w- or x  Create file, fail if exists
+                    a        Read/write if exists, create otherwise
+        swmr (bool): Open the file in SWMR read mode. Only used when mode = 'r'.
+        cache (bool): Keep the file handle in a cache or return it from there
+
+    Returns:
+        context manager around h5py.File: the opened or cached HDF5 file object
+    """
     filename = os.path.realpath(os.path.abspath(filename))
-    if filename in _FILE_HANDLE_CACHE:
-        # print("THE CACHE STRIKES BACK", filename)
-        _FILE_HANDLE_CACHE_COUNTER[filename] += 1
-        return contextlib.nullcontext(_FILE_HANDLE_CACHE[filename])
-    return _open_hdf(filename, mode, swmr)
+    handle = _fetch_handle(filename, mode)
+    if handle is not None:
+        if not handle:
+            warnings.warn("File handle found in cache, but in closed state. "
+                          "This indicates a programming bug in a previous caller of open_hdf. "
+                          "You should not manually close file handles obtained from this function.",
+                          category=HdfCacheWarning, stacklevel=2)
+            del _FILE_HANDLE_CACHE[filename, handle.mode]
+            return CachedHDF(filename, mode)
+        return contextlib.nullcontext(handle)
+    if cache:
+        return CachedHDF(filename, mode)
+    else:
+        return _open_hdf(filename, mode, swmr)
 
 def _read_hdf(
     hdf_filehandle: Union[str, h5py.File], h5_path: str, slash: str = "ignore"
