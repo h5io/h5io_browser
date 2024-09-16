@@ -37,7 +37,7 @@ def delete_item(file_name: str, h5_path: str) -> None:
     """
     try:
         if os.path.exists(file_name):
-            with _open_hdf(file_name, mode="a") as store:
+            with open_hdf(file_name, mode="a") as store:
                 del store[h5_path]
     except (AttributeError, KeyError):
         pass
@@ -59,7 +59,7 @@ def list_hdf(
        (list, list): list of HDF5 nodes and list of HDF5 groups
     """
     if os.path.exists(file_name):
-        with h5py.File(file_name, "r") as hdf:
+        with open_hdf(file_name, "r") as hdf:
             try:
                 return _get_hdf_content(hdf=hdf[h5_path], recursive=recursive)
             except KeyError:
@@ -94,8 +94,7 @@ def read_dict_from_hdf(
     """
     if h5_path[0] != "/":
         h5_path = "/" + h5_path
-    # with h5py.File(file_name, "r") as hdf:
-    with _open_hdf(file_name, "r", swmr=True) as hdf:
+    with open_hdf(file_name, "r", swmr=True) as hdf:
         group_attrs_dict = hdf[h5_path].attrs
         if (
             "TITLE" in group_attrs_dict.keys()
@@ -156,7 +155,7 @@ def write_dict_to_hdf(
                       keys in data. This does not apply to the top level name (title). If 'error', '/' is not allowed
                       in any lower-level keys.
     """
-    with _open_hdf(file_name, mode="a") as store:
+    with open_hdf(file_name, mode="a") as store:
         for k, v in data_dict.items():
             _write_hdf5_with_json_support(
                 hdf_filehandle=store,
@@ -384,7 +383,7 @@ def _read_hdf(
     """
     file_name = _get_filename_from_filehandle(hdf_filehandle=hdf_filehandle)
     if isinstance(hdf_filehandle, str):
-        hdf_context = _open_hdf(hdf_filehandle, mode="r", swmr=True)
+        hdf_context = open_hdf(hdf_filehandle, mode="r", swmr=True)
     else:
         hdf_context = contextlib.nullcontext(hdf_filehandle)
     with hdf_context as hdf_filehandle:
@@ -464,22 +463,33 @@ def _write_hdf(
                           the HDF5 file. (requires python >=3.11)
     """
     file_name = _get_filename_from_filehandle(hdf_filehandle=hdf_filehandle)
-    _retry(
-        lambda: h5io.write_hdf5(
-            fname=hdf_filehandle,
-            data=data,
-            overwrite=overwrite,
-            compression=compression,
-            title=h5_path,
-            slash=slash,
-            use_json=use_json,
-            use_state=use_state,
-        ),
-        error=BlockingIOError,
-        msg=f"Two or more processes tried to access the file {file_name}.",
-        at_most=10,
-        delay=1,
-    )
+    if isinstance(hdf_filehandle, str):
+        if overwrite == "update":
+            mode = "a"
+        elif overwrite:
+            mode = "w"
+        else:
+            mode = "w-"
+        hdf_context = open_hdf(hdf_filehandle, mode=mode)
+    else:
+        hdf_context = contextlib.nullcontext(hdf_filehandle)
+    with hdf_context as hdf_filehandle:
+        _retry(
+            lambda: h5io.write_hdf5(
+                fname=hdf_filehandle,
+                data=data,
+                overwrite=overwrite,
+                compression=compression,
+                title=h5_path,
+                slash=slash,
+                use_json=use_json,
+                use_state=use_state,
+            ),
+            error=BlockingIOError,
+            msg=f"Two or more processes tried to access the file {file_name}.",
+            at_most=10,
+            delay=1,
+        )
 
 
 def _write_hdf5_with_json_support(
