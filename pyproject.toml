@@ -27,7 +27,7 @@ classifiers = [
 dependencies = [
     "h5io==0.2.4",
     "h5py==3.11.0",
-    "numpy==2.1.1",
+    "numpy==2.1.2",
     "pandas==2.2.3",
 ]
 dynamic = ["version"]
