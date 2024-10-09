@@ -230,25 +230,29 @@ def _merge_nested_dict(main_dict: dict, add_dict: dict) -> dict:
             main_dict[k] = v
     return main_dict
 
+
 _FILE_HANDLE_CACHE = {}
+
 
 def _fetch_handle(filename, mode):
     """Look up handle with compatible mode."""
     # lists which modes (of already cached open handles) are suitable for each of the requested modes
     acceptable_modes = {
-            # we can also read from r+/a modes, but e.g. an a mode handle won't do for a r+ request, because r+ wants to
-            # create the file
-            "r": ["r", "r+", "a"],
-            "w": ["w", "r+", "a"],
-            "a": ["a", "r+"],
+        # we can also read from r+/a modes, but e.g. an a mode handle won't do for a r+ request, because r+ wants to
+        # create the file
+        "r": ["r", "r+", "a"],
+        "w": ["w", "r+", "a"],
+        "a": ["a", "r+"],
     }.get(mode, [mode])
     for mode in acceptable_modes:
         handle = _FILE_HANDLE_CACHE.get((filename, mode), None)
         if handle is not None:
             return handle
 
+
 class HdfCacheWarning(UserWarning):
     pass
+
 
 @contextlib.contextmanager
 def CachedHDF(filename: str, mode: str = "r"):
@@ -289,11 +293,15 @@ def CachedHDF(filename: str, mode: str = "r"):
             finally:
                 # HDF file are true-ish when open, false-ish when not
                 if not handle or handle not in _FILE_HANDLE_CACHE.values():
-                    warnings.warn("Cached file handle closed or no longer in cache. "
-                                  "This indicates a programming bug in a caller of open_hdf. "
-                                  "You should not manually close file handles obtained from this function.",
-                                  category=HdfCacheWarning, stacklevel=2)
+                    warnings.warn(
+                        "Cached file handle closed or no longer in cache. "
+                        "This indicates a programming bug in a caller of open_hdf. "
+                        "You should not manually close file handles obtained from this function.",
+                        category=HdfCacheWarning,
+                        stacklevel=2,
+                    )
                 _FILE_HANDLE_CACHE.pop((filename, handle.mode), None)
+
 
 def _open_hdf(filename: str, mode: str = "r", swmr: bool = False) -> h5py.File:
     """
@@ -320,7 +328,10 @@ def _open_hdf(filename: str, mode: str = "r", swmr: bool = False) -> h5py.File:
     else:
         return h5py.File(name=filename, mode=mode, libver="latest", swmr=swmr)
 
-def open_hdf(filename: str, mode: str = "r", swmr: bool = False, cache: bool = False) -> contextlib.AbstractContextManager[h5py.File]:
+
+def open_hdf(
+    filename: str, mode: str = "r", swmr: bool = False, cache: bool = False
+) -> contextlib.AbstractContextManager[h5py.File]:
     """
     Open HDF5 file with optional caching.
 
@@ -348,10 +359,13 @@ def open_hdf(filename: str, mode: str = "r", swmr: bool = False, cache: bool = F
     handle = _fetch_handle(filename, mode)
     if handle is not None:
         if not handle:
-            warnings.warn("File handle found in cache, but in closed state. "
-                          "This indicates a programming bug in a previous caller of open_hdf. "
-                          "You should not manually close file handles obtained from this function.",
-                          category=HdfCacheWarning, stacklevel=2)
+            warnings.warn(
+                "File handle found in cache, but in closed state. "
+                "This indicates a programming bug in a previous caller of open_hdf. "
+                "You should not manually close file handles obtained from this function.",
+                category=HdfCacheWarning,
+                stacklevel=2,
+            )
             del _FILE_HANDLE_CACHE[filename, handle.mode]
             return CachedHDF(filename, mode)
         return contextlib.nullcontext(handle)
@@ -359,6 +373,7 @@ def open_hdf(filename: str, mode: str = "r", swmr: bool = False, cache: bool = F
         return CachedHDF(filename, mode)
     else:
         return _open_hdf(filename, mode, swmr)
+
 
 def _read_hdf(
     hdf_filehandle: Union[str, h5py.File], h5_path: str, slash: str = "ignore"

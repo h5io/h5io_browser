@@ -565,6 +565,7 @@ class CachedTestMixin:
     WARNING: Assumes that cls.file_name is defined and is the only HDF file
     accessed during all test methods.
     """
+
     def setUp(self):
         super().setUp()
         # Test with an append mode file cache, if test request read mode files
@@ -581,11 +582,14 @@ class CachedTestMixin:
         self._context.__exit__(None, None, None)
         super().tearDown()
 
+
 class TestBaseHierachicalCached(CachedTestMixin, TestBaseHierachical):
     pass
 
+
 class TestBaseJSONCached(CachedTestMixin, TestBaseJSON):
     pass
+
 
 class TestBasePartialRead(CachedTestMixin, TestBasePartialRead):
     pass
