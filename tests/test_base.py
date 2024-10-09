@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 import h5py
 from unittest import TestCase
@@ -12,6 +13,8 @@ from h5io_browser import (
     write_dict_to_hdf,
 )
 from h5io_browser.base import (
+    CachedHDF,
+    open_hdf,
     _get_hdf_content,
     _is_ragged_in_1st_dim_only,
     _read_dict_from_open_hdf,
@@ -540,7 +543,7 @@ class TestCompatibility(TestCase):
             "b": 42,
         }
         self.h5_path = "h5io"
-        h5io.write_hdf5("testcomp.h5", self.data)
+        h5io.write_hdf5(self.file_name, self.data)
 
     def test_h5io(self):
         dataread = h5io.read_hdf5(self.file_name, self.h5_path)
@@ -654,3 +657,40 @@ class TestBasePartialRead(TestCase):
                 {"data_hierarchical/c/e": {"TITLE": "ndarray"}},
             ],
         )
+
+
+class CachedTestMixin:
+    """
+    Run mixed in test cases, but open hdf file cache before each method.
+
+    WARNING: Assumes that cls.file_name is defined and is the only HDF file
+    accessed during all test methods.
+    """
+
+    def setUp(self):
+        super().setUp()
+        # Test with an append mode file cache, if test request read mode files
+        # it will still receive the cached handle
+        cache = CachedHDF(self.file_name, "a")
+        # Poor man's enterContext, it seems if enterContext is used the clean
+        # up action is only performed after the tearDown and so tearDown and
+        # context manager contest the underlying hdf5 files and that causes
+        # errors on windows
+        self._context = cache
+        cache.__enter__()
+
+    def tearDown(self):
+        self._context.__exit__(None, None, None)
+        super().tearDown()
+
+
+class TestBaseHierachicalCached(CachedTestMixin, TestBaseHierachical):
+    pass
+
+
+class TestBaseJSONCached(CachedTestMixin, TestBaseJSON):
+    pass
+
+
+class TestBasePartialRead(CachedTestMixin, TestBasePartialRead):
+    pass
