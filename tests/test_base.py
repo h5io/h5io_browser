@@ -570,16 +570,15 @@ class CachedTestMixin:
         # Test with an append mode file cache, if test request read mode files
         # it will still receive the cached handle
         cache = CachedHDF(self.file_name, "a")
-        if sys.version_info.major == 3 and sys.version_info.minor >= 11:
-            self.enterContext(cache)
-        else:
-            # Poor man's enterContext, because that only landed in 3.11
-            self._context = cache
-            cache.__enter__()
+        # Poor man's enterContext, it seems if enterContext is used the clean
+        # up action is only performed after the tearDown and so tearDown and
+        # context manager contest the underlying hdf5 files and that causes
+        # errors on windows
+        self._context = cache
+        cache.__enter__()
 
     def tearDown(self):
-        if sys.version_info.major == 3 and sys.version_info.minor < 11:
-            self._context.__exit__(None, None, None)
+        self._context.__exit__(None, None, None)
         super().tearDown()
 
 class TestBaseHierachicalCached(CachedTestMixin, TestBaseHierachical):
