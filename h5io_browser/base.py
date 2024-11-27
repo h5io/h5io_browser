@@ -1,3 +1,4 @@
+import contextlib
 import os
 import posixpath
 import sys
@@ -37,7 +38,7 @@ def delete_item(file_name: str, h5_path: str) -> None:
     """
     try:
         if os.path.exists(file_name):
-            with _open_hdf(file_name, mode="a") as store:
+            with open_hdf(file_name, mode="a") as store:
                 del store[h5_path]
     except (AttributeError, KeyError):
         pass
@@ -63,7 +64,7 @@ def list_hdf(
        (list, list): list of HDF5 nodes and list of HDF5 groups
     """
     if os.path.exists(file_name):
-        with h5py.File(file_name, "r") as hdf:
+        with open_hdf(file_name, "r") as hdf:
             try:
                 return _get_hdf_content(
                     hdf=hdf[h5_path], recursive=recursive, pattern=pattern
@@ -102,7 +103,7 @@ def read_dict_from_hdf(
     """
     if h5_path[0] != "/":
         h5_path = "/" + h5_path
-    with h5py.File(file_name, "r") as hdf:
+    with open_hdf(file_name, "r", swmr=True) as hdf:
         group_attrs_dict = hdf[h5_path].attrs
         if (
             "TITLE" in group_attrs_dict.keys()
@@ -164,7 +165,7 @@ def write_dict_to_hdf(
                       keys in data. This does not apply to the top level name (title). If 'error', '/' is not allowed
                       in any lower-level keys.
     """
-    with _open_hdf(file_name, mode="a") as store:
+    with open_hdf(file_name, mode="a") as store:
         for k, v in data_dict.items():
             _write_hdf5_with_json_support(
                 hdf_filehandle=store,
@@ -240,6 +241,78 @@ def _merge_nested_dict(main_dict: dict, add_dict: dict) -> dict:
     return main_dict
 
 
+_FILE_HANDLE_CACHE = {}
+
+
+def _fetch_handle(filename, mode):
+    """Look up handle with compatible mode."""
+    # lists which modes (of already cached open handles) are suitable for each of the requested modes
+    acceptable_modes = {
+        # we can also read from r+/a modes, but e.g. an a mode handle won't do for a r+ request, because r+ wants to
+        # create the file
+        "r": ["r", "r+", "a"],
+        "w": ["w", "r+", "a"],
+        "a": ["a", "r+"],
+    }.get(mode, [mode])
+    for mode in acceptable_modes:
+        handle = _FILE_HANDLE_CACHE.get((filename, mode), None)
+        if handle is not None:
+            return handle
+
+
+class HdfCacheWarning(UserWarning):
+    pass
+
+
+@contextlib.contextmanager
+def CachedHDF(filename: str, mode: str = "r"):
+    """
+    Cache a HDF5 file handle.
+
+    After entering a with statement with this context manager, all calls to :func:`.open_hdf` are rerouted to check
+    inside a (global) file handle cache.  File handles are cached separately for different modes, but as long as modes
+    are compatible open handles are preferred to opening multiple files (e.g. a cached append mode handle would be
+    returned from :func:`.open_hdf` when a read mode one is requested).
+
+    Yields the file handle.  The handle yielded from here or ones obtained from :func:`.open_hdf` with in the context
+    must not be explicitly closed.  If this is detected, the file is reopened and a warning is printed.
+
+    Single Writer Multiple Reader (SWMR) mode is implied in this context.
+
+    Args:
+        filename (str): Name of the file on disk
+        mode (str): r        Readonly, file must exist (default)
+                    r+       Read/write, file must exist
+                    w        Create file, truncate if exists
+                    w- or x  Create file, fail if exists
+                    a        Read/write if exists, create otherwise
+
+    Yields:
+        h5py.File: cached file handle
+    """
+    filename = os.path.realpath(os.path.abspath(filename))
+    handle = _fetch_handle(filename, mode)
+    # File already cached, someone above us opened it and will clean it up, we just need to pass it down
+    if handle is not None:
+        yield handle
+    else:
+        with _open_hdf(filename, mode, swmr=True) as handle:
+            _FILE_HANDLE_CACHE[filename, handle.mode] = handle
+            try:
+                yield handle
+            finally:
+                # HDF file are true-ish when open, false-ish when not
+                if not handle or handle not in _FILE_HANDLE_CACHE.values():
+                    warnings.warn(
+                        "Cached file handle closed or no longer in cache. "
+                        "This indicates a programming bug in a caller of open_hdf. "
+                        "You should not manually close file handles obtained from this function.",
+                        category=HdfCacheWarning,
+                        stacklevel=2,
+                    )
+                _FILE_HANDLE_CACHE.pop((filename, handle.mode), None)
+
+
 def _open_hdf(filename: str, mode: str = "r", swmr: bool = False) -> h5py.File:
     """
     Open HDF5 file
@@ -258,11 +331,58 @@ def _open_hdf(filename: str, mode: str = "r", swmr: bool = False) -> h5py.File:
         h5py.File: open HDF5 file object
     """
     if swmr and mode != "r":
-        store = h5py.File(name=filename, mode=mode, libver="latest")
-        store.swmr_mode = True
+        store = h5py.File(name=filename, mode=mode, libver="latest", swmr=False)
+        if not store.swmr_mode:
+            store.swmr_mode = True
         return store
     else:
         return h5py.File(name=filename, mode=mode, libver="latest", swmr=swmr)
+
+
+def open_hdf(
+    filename: str, mode: str = "r", swmr: bool = False, cache: bool = False
+) -> contextlib.AbstractContextManager[h5py.File]:
+    """
+    Open HDF5 file with optional caching.
+
+    When a matching file handle exists in the cache, it is always returned, no matter whether `cache` is given or not.
+
+    This function may return a bare file handle or it may return a context manager yielding a file handle, as a
+    consequence calling code must not try to call normal hdf functions or methods on the return value, but always unwrap
+    it first by entering a with statement.
+
+    Args:
+        filename (str): Name of the file on disk, or file-like object.  Note: for files created with the 'core' driver,
+                        HDF5 still requires this be non-empty.
+        mode (str): r        Readonly, file must exist (default)
+                    r+       Read/write, file must exist
+                    w        Create file, truncate if exists
+                    w- or x  Create file, fail if exists
+                    a        Read/write if exists, create otherwise
+        swmr (bool): Open the file in SWMR read mode. Only used when mode = 'r'.
+        cache (bool): Keep the file handle in a cache or return it from there
+
+    Returns:
+        context manager around h5py.File: the opened or cached HDF5 file object
+    """
+    filename = os.path.realpath(os.path.abspath(filename))
+    handle = _fetch_handle(filename, mode)
+    if handle is not None:
+        if not handle:
+            warnings.warn(
+                "File handle found in cache, but in closed state. "
+                "This indicates a programming bug in a previous caller of open_hdf. "
+                "You should not manually close file handles obtained from this function.",
+                category=HdfCacheWarning,
+                stacklevel=2,
+            )
+            del _FILE_HANDLE_CACHE[filename, handle.mode]
+            return CachedHDF(filename, mode)
+        return contextlib.nullcontext(handle)
+    if cache:
+        return CachedHDF(filename, mode)
+    else:
+        return _open_hdf(filename, mode, swmr)
 
 
 def _read_hdf(
@@ -281,17 +401,22 @@ def _read_hdf(
         object:     The loaded data. Can be of any type supported by ``write_hdf5``.
     """
     file_name = _get_filename_from_filehandle(hdf_filehandle=hdf_filehandle)
-    return _retry(
-        lambda: h5io.read_hdf5(
-            fname=hdf_filehandle,
-            title=h5_path,
-            slash=slash,
-        ),
-        error=BlockingIOError,
-        msg=f"Two or more processes tried to access the file {file_name}.",
-        at_most=10,
-        delay=1,
-    )
+    if isinstance(hdf_filehandle, str):
+        hdf_context = open_hdf(hdf_filehandle, mode="r", swmr=True)
+    else:
+        hdf_context = contextlib.nullcontext(hdf_filehandle)
+    with hdf_context as hdf_filehandle:
+        return _retry(
+            lambda: h5io.read_hdf5(
+                fname=hdf_filehandle,
+                title=h5_path,
+                slash=slash,
+            ),
+            error=BlockingIOError,
+            msg=f"Two or more processes tried to access the file {file_name}.",
+            at_most=10,
+            delay=1,
+        )
 
 
 def _read_dict_from_open_hdf(hdf_filehandle, h5_path, recursive=False, slash="ignore"):
@@ -357,22 +482,33 @@ def _write_hdf(
                           the HDF5 file. (requires python >=3.11)
     """
     file_name = _get_filename_from_filehandle(hdf_filehandle=hdf_filehandle)
-    _retry(
-        lambda: h5io.write_hdf5(
-            fname=hdf_filehandle,
-            data=data,
-            overwrite=overwrite,
-            compression=compression,
-            title=h5_path,
-            slash=slash,
-            use_json=use_json,
-            use_state=use_state,
-        ),
-        error=BlockingIOError,
-        msg=f"Two or more processes tried to access the file {file_name}.",
-        at_most=10,
-        delay=1,
-    )
+    if isinstance(hdf_filehandle, str):
+        if overwrite == "update":
+            mode = "a"
+        elif overwrite:
+            mode = "w"
+        else:
+            mode = "w-"
+        hdf_context = open_hdf(hdf_filehandle, mode=mode)
+    else:
+        hdf_context = contextlib.nullcontext(hdf_filehandle)
+    with hdf_context as hdf_filehandle:
+        _retry(
+            lambda: h5io.write_hdf5(
+                fname=hdf_filehandle,
+                data=data,
+                overwrite=overwrite,
+                compression=compression,
+                title=h5_path,
+                slash=slash,
+                use_json=use_json,
+                use_state=use_state,
+            ),
+            error=BlockingIOError,
+            msg=f"Two or more processes tried to access the file {file_name}.",
+            at_most=10,
+            delay=1,
+        )
 
 
 def _write_hdf5_with_json_support(
