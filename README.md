@@ -1,6 +1,6 @@
 # Easy navigation and data storage for HDF5
 
-[![Python package](https://github.com/h5io/h5io_browser/actions/workflows/unittests.yml/badge.svg)](https://github.com/h5io/h5io_browser/actions)
+[![Pipeline](https://github.com/h5io/h5io_browser/actions/workflows/pipeline.yml/badge.svg)](https://github.com/h5io/h5io_browser/actions/workflows/pipeline.yml)
 [![Coverage Status](https://coveralls.io/repos/github/h5io/h5io_browser/badge.svg?branch=main)](https://coveralls.io/github/h5io/h5io_browser?branch=main)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/h5io/h5io_browser/HEAD?labpath=notebooks%2Fexample.ipynb)
 
