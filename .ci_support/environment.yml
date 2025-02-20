@@ -4,6 +4,6 @@ dependencies:
 - coverage
 - setuptools
 - h5io =0.2.4
-- h5py =3.12.1
+- h5py =3.13.0
 - numpy =2.2.3
 - pandas =2.2.3
