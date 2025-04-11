@@ -37,6 +37,11 @@ Homepage = "https://github.com/h5io/h5io_browser"
 Documentation = "https://github.com/h5io/h5io_browser"
 Repository = "https://github.com/h5io/h5io_browser"
 
+[project.optional-dependencies]
+pytables = [
+    "tables==3.10.2",
+]
+
 [tool.setuptools.packages.find]
 include = ["h5io_browser*"]
 

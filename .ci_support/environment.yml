@@ -7,3 +7,4 @@ dependencies:
 - h5py =3.13.0
 - numpy =2.2.4
 - pandas =2.2.3
+- pytables =3.10.2
