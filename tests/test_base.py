@@ -22,7 +22,7 @@ from h5io_browser.base import (
 
 
 try:
-    import pytables
+    import tables
 
     skip_pytables_test = False
 except ImportError:
