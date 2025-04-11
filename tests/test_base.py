@@ -90,7 +90,7 @@ class TestBaseHierachical(TestCase):
     def setUp(self):
         self.file_name = "test_hierarchical.h5"
         self.h5_path = "/data_hierarchical"
-        self.df = pandas.DataFrame({0:[1],1:[2]})
+        self.df = pandas.DataFrame({0: [1], 1: [2]})
         self.data_hierarchical = {
             "/data_hierarchical/a": [1, 2],
             "/data_hierarchical/b": 3,
@@ -107,7 +107,9 @@ class TestBaseHierachical(TestCase):
         os.remove(self.file_name)
 
     def test_read_dict_hierarchical(self):
-        for k, v in _read_dict_from_hdf(file_name=self.file_name, h5_path=self.h5_path, recursive=True).items():
+        for k, v in _read_dict_from_hdf(
+            file_name=self.file_name, h5_path=self.h5_path, recursive=True
+        ).items():
             if isinstance(v, pandas.DataFrame):
                 self.assertEqual(self.data_hierarchical[k].to_dict(), v.to_dict())
             else:
@@ -115,7 +117,9 @@ class TestBaseHierachical(TestCase):
                     self.data_hierarchical[k],
                     v,
                 )
-        for k, v in _read_dict_from_hdf(file_name=self.file_name, h5_path=self.h5_path, recursive=1).items():
+        for k, v in _read_dict_from_hdf(
+            file_name=self.file_name, h5_path=self.h5_path, recursive=1
+        ).items():
             if isinstance(v, pandas.DataFrame):
                 self.assertEqual(self.data_hierarchical[k].to_dict(), v.to_dict())
             else:
@@ -151,7 +155,9 @@ class TestBaseHierachical(TestCase):
 
     def test_read_nested_dict_hierarchical(self):
         results = {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}, "p": self.df}
-        for k, v in read_dict_from_hdf(file_name=self.file_name, h5_path=self.h5_path, recursive=True).items():
+        for k, v in read_dict_from_hdf(
+            file_name=self.file_name, h5_path=self.h5_path, recursive=True
+        ).items():
             if isinstance(v, pandas.DataFrame):
                 self.assertEqual(results[k].to_dict(), v.to_dict())
             else:
@@ -159,7 +165,9 @@ class TestBaseHierachical(TestCase):
                     results[k],
                     v,
                 )
-        for k, v in read_dict_from_hdf(file_name=self.file_name, h5_path="/", recursive=True)["data_hierarchical"].items():
+        for k, v in read_dict_from_hdf(
+            file_name=self.file_name, h5_path="/", recursive=True
+        )["data_hierarchical"].items():
             if isinstance(v, pandas.DataFrame):
                 self.assertEqual(results[k].to_dict(), v.to_dict())
             else:
@@ -176,7 +184,9 @@ class TestBaseHierachical(TestCase):
             ),
         )
         results = {"a": [1, 2], "b": 3, "p": self.df}
-        for k, v in read_dict_from_hdf(file_name=self.file_name, h5_path="/", recursive=False).items():
+        for k, v in read_dict_from_hdf(
+            file_name=self.file_name, h5_path="/", recursive=False
+        ).items():
             if isinstance(v, pandas.DataFrame):
                 self.assertEqual(results[k].to_dict(), v.to_dict())
             else:
@@ -201,7 +211,12 @@ class TestBaseHierachical(TestCase):
             ),
         )
         results = {"a": [1, 2], "b": 3, "c": {"d": 4, "e": 5}, "p": self.df}
-        for k, v in read_dict_from_hdf(file_name=self.file_name, h5_path=self.h5_path, group_paths=[posixpath.join(self.h5_path, "c")],recursive=False).items():
+        for k, v in read_dict_from_hdf(
+            file_name=self.file_name,
+            h5_path=self.h5_path,
+            group_paths=[posixpath.join(self.h5_path, "c")],
+            recursive=False,
+        ).items():
             if isinstance(v, pandas.DataFrame):
                 self.assertEqual(results[k].to_dict(), v.to_dict())
             else:
@@ -330,51 +345,74 @@ class TestBaseHierachical(TestCase):
                 {"data_hierarchical/c": {}},
                 {"data_hierarchical/c/d": {"TITLE": "int"}},
                 {"data_hierarchical/c/e": {"TITLE": "int"}},
-                {'data_hierarchical/p': {'CLASS': b'GROUP',
-                                         'TITLE': 'pd_dataframe',
-                                         'VERSION': b'1.0',
-                                         'axis0_variety': b'regular',
-                                         'axis1_variety': b'regular',
-                                         'block0_items_variety': b'regular',
-                                         'encoding': b'UTF-8',
-                                         'errors': b'strict',
-                                         'nblocks': 1,
-                                         'ndim': 2,
-                                         'pandas_type': b'frame',
-                                         'pandas_version': b'0.15.2'}},
-                {'data_hierarchical/p/axis0': {'CLASS': b'ARRAY',
-                                               'FLAVOR': b'numpy',
-                                               'TITLE': h5py.Empty(dtype=np.dtype('S1')),
-                                               'VERSION': b'2.4',
-                                               'kind': b'integer',
-                                               'name': b'N.',
-                                               'transposed': 1}},
-                {'data_hierarchical/p/axis1': {'CLASS': b'ARRAY',
-                                               'FLAVOR': b'numpy',
-                                               'TITLE': h5py.Empty(dtype=np.dtype('S1')),
-                                               'VERSION': b'2.4',
-                                               'kind': b'integer',
-                                               'name': b'N.',
-                                               'transposed': 1}},
-                {'data_hierarchical/p/block0_items': {'CLASS': b'ARRAY',
-                                                      'FLAVOR': b'numpy',
-                                                      'TITLE': h5py.Empty(dtype=np.dtype('S1')),
-                                                      'VERSION': b'2.4',
-                                                      'kind': b'integer',
-                                                      'name': b'N.',
-                                                      'transposed': 1}},
-                {'data_hierarchical/p/block0_values': {'CLASS': b'ARRAY',
-                                                       'FLAVOR': b'numpy',
-                                                       'TITLE': h5py.Empty(dtype=np.dtype('S1')),
-                                                       'VERSION': b'2.4',
-                                                       'transposed': 1}}
+                {
+                    "data_hierarchical/p": {
+                        "CLASS": b"GROUP",
+                        "TITLE": "pd_dataframe",
+                        "VERSION": b"1.0",
+                        "axis0_variety": b"regular",
+                        "axis1_variety": b"regular",
+                        "block0_items_variety": b"regular",
+                        "encoding": b"UTF-8",
+                        "errors": b"strict",
+                        "nblocks": 1,
+                        "ndim": 2,
+                        "pandas_type": b"frame",
+                        "pandas_version": b"0.15.2",
+                    }
+                },
+                {
+                    "data_hierarchical/p/axis0": {
+                        "CLASS": b"ARRAY",
+                        "FLAVOR": b"numpy",
+                        "TITLE": h5py.Empty(dtype=np.dtype("S1")),
+                        "VERSION": b"2.4",
+                        "kind": b"integer",
+                        "name": b"N.",
+                        "transposed": 1,
+                    }
+                },
+                {
+                    "data_hierarchical/p/axis1": {
+                        "CLASS": b"ARRAY",
+                        "FLAVOR": b"numpy",
+                        "TITLE": h5py.Empty(dtype=np.dtype("S1")),
+                        "VERSION": b"2.4",
+                        "kind": b"integer",
+                        "name": b"N.",
+                        "transposed": 1,
+                    }
+                },
+                {
+                    "data_hierarchical/p/block0_items": {
+                        "CLASS": b"ARRAY",
+                        "FLAVOR": b"numpy",
+                        "TITLE": h5py.Empty(dtype=np.dtype("S1")),
+                        "VERSION": b"2.4",
+                        "kind": b"integer",
+                        "name": b"N.",
+                        "transposed": 1,
+                    }
+                },
+                {
+                    "data_hierarchical/p/block0_values": {
+                        "CLASS": b"ARRAY",
+                        "FLAVOR": b"numpy",
+                        "TITLE": h5py.Empty(dtype=np.dtype("S1")),
+                        "VERSION": b"2.4",
+                        "transposed": 1,
+                    }
+                },
             ],
         )
 
     def test_list_hdf(self):
         nodes, groups = list_hdf(file_name=self.file_name, h5_path=self.h5_path)
         self.assertEqual(groups, ["/data_hierarchical/c"])
-        self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b", "/data_hierarchical/p"])
+        self.assertEqual(
+            nodes,
+            ["/data_hierarchical/a", "/data_hierarchical/b", "/data_hierarchical/p"],
+        )
         nodes, groups = list_hdf(file_name=self.file_name, h5_path="/wrong_path")
         self.assertEqual(nodes, [])
         self.assertEqual(groups, [])
@@ -386,7 +424,10 @@ class TestBaseHierachical(TestCase):
         self.assertEqual(nodes, [])
         nodes, groups = list_hdf(file_name=self.file_name, h5_path="/", recursive=1)
         self.assertEqual(groups, ["/data_hierarchical", "/data_hierarchical/c"])
-        self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b", "/data_hierarchical/p"])
+        self.assertEqual(
+            nodes,
+            ["/data_hierarchical/a", "/data_hierarchical/b", "/data_hierarchical/p"],
+        )
         nodes, groups = list_hdf(file_name=self.file_name, h5_path="/", recursive=2)
         self.assertEqual(groups, ["/data_hierarchical", "/data_hierarchical/c"])
         self.assertEqual(
@@ -428,7 +469,10 @@ class TestBaseHierachical(TestCase):
             file_name=self.file_name, h5_path=self.h5_path, pattern="*/*"
         )
         self.assertEqual(groups, ["/data_hierarchical/c"])
-        self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b", "/data_hierarchical/p"])
+        self.assertEqual(
+            nodes,
+            ["/data_hierarchical/a", "/data_hierarchical/b", "/data_hierarchical/p"],
+        )
         nodes, groups = list_hdf(
             file_name=self.file_name, h5_path="/data_hierarchical", pattern="*/d"
         )
@@ -460,7 +504,14 @@ class TestBaseHierachical(TestCase):
                 only_nodes=False,
             )
             self.assertEqual(groups, ["/data_hierarchical/c"])
-            self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b", "/data_hierarchical/p"])
+            self.assertEqual(
+                nodes,
+                [
+                    "/data_hierarchical/a",
+                    "/data_hierarchical/b",
+                    "/data_hierarchical/p",
+                ],
+            )
             nodes = _get_hdf_content(
                 hdf=hdf["data_hierarchical"],
                 recursive=False,
@@ -474,15 +525,32 @@ class TestBaseHierachical(TestCase):
                 only_nodes=False,
             )
             self.assertEqual(groups, ["/data_hierarchical/c"])
-            self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b", "/data_hierarchical/p"])
+            self.assertEqual(
+                nodes,
+                [
+                    "/data_hierarchical/a",
+                    "/data_hierarchical/b",
+                    "/data_hierarchical/p",
+                ],
+            )
             self.assertEqual(groups, ["/data_hierarchical/c"])
-            self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b", "/data_hierarchical/p"])
+            self.assertEqual(
+                nodes,
+                [
+                    "/data_hierarchical/a",
+                    "/data_hierarchical/b",
+                    "/data_hierarchical/p",
+                ],
+            )
 
     def test_delete(self):
         delete_item(file_name=self.file_name, h5_path=posixpath.join(self.h5_path, "c"))
         nodes, groups = list_hdf(file_name=self.file_name, h5_path=self.h5_path)
         self.assertEqual(groups, [])
-        self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b", "/data_hierarchical/p"])
+        self.assertEqual(
+            nodes,
+            ["/data_hierarchical/a", "/data_hierarchical/b", "/data_hierarchical/p"],
+        )
         delete_item(file_name=self.file_name, h5_path="/data_hierarchical/a")
         nodes, groups = list_hdf(file_name=self.file_name, h5_path="/data_hierarchical")
         self.assertEqual(groups, [])
@@ -493,7 +561,10 @@ class TestBaseHierachical(TestCase):
     def test_write_dict_to_hdf(self):
         nodes, groups = list_hdf(file_name=self.file_name, h5_path=self.h5_path)
         self.assertEqual(groups, ["/data_hierarchical/c"])
-        self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b", "/data_hierarchical/p"])
+        self.assertEqual(
+            nodes,
+            ["/data_hierarchical/a", "/data_hierarchical/b", "/data_hierarchical/p"],
+        )
         write_dict_to_hdf(
             file_name=self.file_name,
             data_dict={posixpath.join(self.h5_path, "f"): {"g": 6, "h": 7}},
@@ -506,13 +577,21 @@ class TestBaseHierachical(TestCase):
         self.assertEqual(groups, ["/data_hierarchical/c", "/data_hierarchical/i"])
         self.assertEqual(
             nodes,
-            ["/data_hierarchical/a", "/data_hierarchical/b", "/data_hierarchical/f", "/data_hierarchical/p"],
+            [
+                "/data_hierarchical/a",
+                "/data_hierarchical/b",
+                "/data_hierarchical/f",
+                "/data_hierarchical/p",
+            ],
         )
         delete_item(file_name=self.file_name, h5_path=posixpath.join(self.h5_path, "i"))
         delete_item(file_name=self.file_name, h5_path=posixpath.join(self.h5_path, "f"))
         nodes, groups = list_hdf(file_name=self.file_name, h5_path=self.h5_path)
         self.assertEqual(groups, ["/data_hierarchical/c"])
-        self.assertEqual(nodes, ["/data_hierarchical/a", "/data_hierarchical/b", "/data_hierarchical/p"])
+        self.assertEqual(
+            nodes,
+            ["/data_hierarchical/a", "/data_hierarchical/b", "/data_hierarchical/p"],
+        )
         write_dict_to_hdf(
             file_name=self.file_name,
             data_dict={posixpath.join(self.h5_path, "j"): ValueError},
