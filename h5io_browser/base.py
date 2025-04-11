@@ -24,6 +24,8 @@ H5IO_GROUP_TYPES = (
     "csr_array",
     "dict",
     "multiarray",
+    "pd_dataframe",
+    "pd_series",
 )
 
 
@@ -111,7 +113,7 @@ def read_dict_from_hdf(
             return _read_dict_from_open_hdf(
                 hdf_filehandle=hdf,
                 h5_path=h5_path[1:],
-                recursive=recursive,
+                recursive=False,
                 slash=slash,
             )
         else:
