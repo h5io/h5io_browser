@@ -1,10 +1,10 @@
 import os
 import numpy as np
+import h5io
 import h5py
 from unittest import TestCase
 import posixpath
-import h5io
-import h5py
+
 from h5io_browser import (
     delete_item,
     list_hdf,
