@@ -35,7 +35,6 @@ jobs:
       - name: Test
         shell: bash -l {0}
         run: |
-          pip install versioneer[toml]==0.29
           pip install . --no-deps --no-build-isolation
           ./.ci_support/build_notebooks.sh
 
@@ -55,7 +54,6 @@ jobs:
     - name: Setup
       shell: bash -l {0}
       run: |
-        pip install versioneer[toml]==0.29
         pip install . --no-deps --no-build-isolation
         pip check
 
@@ -99,9 +97,8 @@ jobs:
     - name: Test
       shell: bash -l {0}
       run: |
-        pip install versioneer[toml]==0.29
         pip install . --no-deps --no-build-isolation
-        coverage run --omit h5io_browser/_version.py -m unittest discover tests
+        coverage run
         coverage xml
     - name: Coveralls
       if: matrix.label == 'linux-64-py-3-13'
@@ -123,7 +120,6 @@ jobs:
     - name: Test
       shell: bash -l {0}
       run: |
-        pip install versioneer[toml]==0.29
         pip install . --no-deps --no-build-isolation
         python -m unittest discover tests
 

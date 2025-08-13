@@ -1,6 +1,6 @@
 [build-system]
-requires = ["h5io", "h5py", "numpy", "pandas", "setuptools", "versioneer[toml]==0.29"]
-build-backend = "setuptools.build_meta"
+requires = ["h5io", "h5py", "numpy", "pandas", "hatchling==1.27.0", "hatch-vcs==0.5.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "h5io_browser"
@@ -42,15 +42,28 @@ pytables = [
     "tables==3.10.2",
 ]
 
-[tool.setuptools.packages.find]
-include = ["h5io_browser*"]
+[tool.hatch.build]
+include = [
+    "h5io_browser"
+]
 
-[tool.setuptools.dynamic]
-version = {attr = "h5io_browser.__version__"}
+[tool.hatch.build.hooks.vcs]
+version-file = "h5io_browser/_version.py"
 
-[tool.versioneer]
-VCS = "git"
-style = "pep440-pre"
-versionfile_source = "h5io_browser/_version.py"
-parentdir_prefix = "h5io_browser"
-tag_prefix = "h5io_browser-"
+[tool.hatch.build.targets.sdist]
+include = [
+    "h5io_browser"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "h5io_browser"
+]
+
+[tool.hatch.version]
+source = "vcs"
+path = "h5io_browser/_version.py"
+
+[tool.coverage.run]
+omit = ["h5io_browser/_version.py", "tests/*"]
+command_line = "-m unittest discover tests"
