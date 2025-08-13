@@ -1,3 +1,4 @@
+import h5io_browser._version
 from h5io_browser.base import (
     delete_item,
     list_hdf,
@@ -9,10 +10,7 @@ from h5io_browser.base import (
 )
 from h5io_browser.pointer import Pointer
 
-from ._version import get_versions
-
-# Set version of h5io_browser
-__version__ = get_versions()["version"]
+__version__ = h5io_browser._version.__version__
 __all__ = [
     Pointer,
     delete_item,
