@@ -375,6 +375,18 @@ class Pointer(MutableMapping):
             compression=compression,
         )
 
+    def keys(self) -> List[str]:
+        """
+        List all keys in the current h5_path of the HDF5 file.
+
+        Returns:
+            List[str]: A list of all keys in the current h5_path of the HDF5 file.
+        """
+        return {
+            k.replace(self.h5_path + "/", ""): None
+            for k in list_hdf(file_name=self.file_name, h5_path=self.h5_path, recursive=True)[0]
+        }.keys()
+
     def _repr_json_(self) -> Dict[str, Any]:
         """
         Represent the Pointer inside an interactive python shell or Jupyter Notebooks. In particular in Jupyter lab
