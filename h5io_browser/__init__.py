@@ -8,11 +8,12 @@ from h5io_browser.base import (
 from h5io_browser.base import (
     read_dict_from_hdf as read_nested_dict_from_hdf,
 )
-from h5io_browser.future import read_future_dict_from_hdf
+from h5io_browser.future import read_future_dict_from_hdf, HDFFuture
 from h5io_browser.pointer import Pointer
 
 __version__ = h5io_browser._version.__version__
 __all__ = [
+    HDFFuture,
     Pointer,
     delete_item,
     list_hdf,
