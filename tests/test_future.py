@@ -1,7 +1,7 @@
 import os
 import unittest
 from concurrent.futures import Future
-from h5io_browser import write_dict_to_hdf, read_future_dict_from_hdf
+from h5io_browser import write_dict_to_hdf, read_future_dict_from_hdf, HDFFuture
 
 
 class TestFuture(unittest.TestCase):
@@ -27,6 +27,7 @@ class TestFuture(unittest.TestCase):
         self.assertEqual(set(data.keys()), {"a", "b", "c/d", "c/e"})
         for v in data.values():
             self.assertIsInstance(v, Future)
+            self.assertIsInstance(v, HDFFuture)
             self.assertTrue(v.done())
         self.assertEqual(data["a"].result(), [1, 2])
         self.assertEqual(data["b"].result(), 3)
