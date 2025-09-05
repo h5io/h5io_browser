@@ -113,6 +113,10 @@ class TestPointer(TestCase):
             + "\", h5_path=\"/\") {'groups': ['data_hierarchical'], 'nodes': []}",
         )
 
+    def test_keys(self):
+        p = Pointer(file_name=self.file_name, h5_path="/data_hierarchical")
+        self.assertEqual(set(p.keys()), {"a", "b", "c/d", "c/e"})
+
     def test_repr_json(self):
         p = Pointer(file_name=self.file_name, h5_path="/data_hierarchical")
         self.assertEqual(
