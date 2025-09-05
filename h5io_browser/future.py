@@ -7,17 +7,17 @@ class HDFFuture(Future):
     def __init__(self, file_name, h5_path):
         super().__init__()
         self._file_name = file_name
-        self._h5_path = h5_path 
+        self._h5_path = h5_path
 
     def done(self):
         return True
 
     def result(self):
         return read_dict_from_hdf(
-            file_name=self._file_name, 
+            file_name=self._file_name,
             h5_path=self._h5_path,
         )[self._h5_path.split("/")[-1]]
-    
+
 
 def read_future_dict_from_hdf(
     file_name: str,
@@ -39,7 +39,5 @@ def read_future_dict_from_hdf(
     """
     return {
         k.replace(h5_path + "/", ""): HDFFuture(file_name=file_name, h5_path=k)
-        for k in list_hdf(
-            file_name=file_name, h5_path=h5_path, recursive=recursive
-        )[0]
+        for k in list_hdf(file_name=file_name, h5_path=h5_path, recursive=recursive)[0]
     }
