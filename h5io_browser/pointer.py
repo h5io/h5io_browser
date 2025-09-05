@@ -384,7 +384,9 @@ class Pointer(MutableMapping):
         """
         return {
             k.replace(self.h5_path + "/", ""): None
-            for k in list_hdf(file_name=self.file_name, h5_path=self.h5_path, recursive=True)[0]
+            for k in list_hdf(
+                file_name=self.file_name, h5_path=self.h5_path, recursive=True
+            )[0]
         }.keys()
 
     def _repr_json_(self) -> Dict[str, Any]:
