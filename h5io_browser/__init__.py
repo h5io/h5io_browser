@@ -3,6 +3,7 @@ from h5io_browser.base import (
     delete_item,
     list_hdf,
     read_dict_from_hdf,
+    read_future_dict_from_hdf,
     write_dict_to_hdf,
 )
 from h5io_browser.base import (
@@ -16,6 +17,7 @@ __all__ = [
     delete_item,
     list_hdf,
     read_dict_from_hdf,
+    read_future_dict_from_hdf,
     read_nested_dict_from_hdf,
     write_dict_to_hdf,
 ]
