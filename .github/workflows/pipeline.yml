@@ -99,6 +99,7 @@ jobs:
       run: |
         pip install . --no-deps --no-build-isolation
         coverage run
+        coverage report
         coverage xml
     - name: Coveralls
       if: matrix.label == 'linux-64-py-3-13'
