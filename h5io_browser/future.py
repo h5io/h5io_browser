@@ -13,10 +13,12 @@ class HDFFuture(Future):
     def _load_from_hdf(self):
         if not self._hdf_read:
             try:
-                self.set_result(read_dict_from_hdf(
-                    file_name=self._file_name,
-                    h5_path=self._h5_path,
-                )[self._h5_path.split("/")[-1]])
+                self.set_result(
+                    read_dict_from_hdf(
+                        file_name=self._file_name,
+                        h5_path=self._h5_path,
+                    )[self._h5_path.split("/")[-1]]
+                )
             except Exception as file_access_exception:
                 self.set_exception(file_access_exception)
             self._hdf_read = True
