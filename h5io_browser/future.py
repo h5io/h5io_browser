@@ -1,14 +1,15 @@
-from concurrent.futures import Future
-
 import os
 import warnings
+from concurrent.futures import Future
 from typing import Optional
 
 from h5io_browser.base import list_hdf, read_dict_from_hdf
 
 
 class HDFFuture(Future):
-    def __init__(self, file_name: str, h5_path: str, file_time_stamp: Optional[float]=None):
+    def __init__(
+        self, file_name: str, h5_path: str, file_time_stamp: Optional[float] = None
+    ):
         super().__init__()
         self._file_name = file_name
         self._h5_path = h5_path
@@ -21,7 +22,11 @@ class HDFFuture(Future):
     def _load_from_hdf(self):
         if not self._hdf_read:
             if os.stat(self._file_name).st_mtime != self._file_time_stamp:
-                warnings.warn("The HDF5 file has been modified since the Future object was initialized: {}".format(self._file_name))
+                warnings.warn(
+                    "The HDF5 file has been modified since the Future object was initialized: {}".format(
+                        self._file_name
+                    )
+                )
             try:
                 self.set_result(
                     read_dict_from_hdf(
@@ -62,6 +67,8 @@ def read_future_dict_from_hdf(
     """
     file_time_stamp = os.stat(file_name).st_mtime
     return {
-        k.replace(h5_path + "/", ""): HDFFuture(file_name=file_name, h5_path=k, file_time_stamp=file_time_stamp)
+        k.replace(h5_path + "/", ""): HDFFuture(
+            file_name=file_name, h5_path=k, file_time_stamp=file_time_stamp
+        )
         for k in list_hdf(file_name=file_name, h5_path=h5_path, recursive=recursive)[0]
     }
