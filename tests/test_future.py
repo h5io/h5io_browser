@@ -33,3 +33,7 @@ class TestFuture(unittest.TestCase):
         self.assertEqual(data["b"].result(), 3)
         self.assertEqual(data["c/d"].result(), 4)
         self.assertEqual(data["c/e"].result(), 5)
+
+    def test_error_handling(self):
+        with self.assertRaises(FileNotFoundError):
+            HDFFuture(file_name="error.h5", h5_path="error").result()

@@ -8,15 +8,26 @@ class HDFFuture(Future):
         super().__init__()
         self._file_name = file_name
         self._h5_path = h5_path
+        self._hdf_read = False
+
+    def _load_from_hdf(self):
+        if not self._hdf_read:
+            try:
+                self.set_result(read_dict_from_hdf(
+                    file_name=self._file_name,
+                    h5_path=self._h5_path,
+                )[self._h5_path.split("/")[-1]])
+            except Exception as file_access_exception:
+                self.set_exception(file_access_exception)
+            self._hdf_read = True
 
     def done(self):
-        return True
+        self._load_from_hdf()
+        return super().done()
 
-    def result(self):
-        return read_dict_from_hdf(
-            file_name=self._file_name,
-            h5_path=self._h5_path,
-        )[self._h5_path.split("/")[-1]]
+    def result(self, timeout=None):
+        self._load_from_hdf()
+        return super().result(timeout=timeout)
 
 
 def read_future_dict_from_hdf(
