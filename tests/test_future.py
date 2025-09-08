@@ -37,3 +37,8 @@ class TestFuture(unittest.TestCase):
     def test_error_handling(self):
         with self.assertRaises(FileNotFoundError):
             HDFFuture(file_name="error.h5", h5_path="error").result()
+
+    def test_file_time_stamp(self):
+        f = HDFFuture(file_name=self.file_name, h5_path=self.h5_path + "/a")
+        f._file_time_stamp = 0
+        self.assertEqual(f.result(), [1, 2])
