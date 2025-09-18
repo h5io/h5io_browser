@@ -399,22 +399,16 @@ def _write_hdf5_with_json_support(
                       in any lower-level keys.
     """
     value, use_json = _check_json_conversion(value=data)
-    try:
-        _write_hdf(
-            hdf_filehandle=hdf_filehandle,
-            h5_path=h5_path,
-            data=value,
-            compression=compression,
-            slash=slash,
-            use_json=use_json,
-            use_state=sys.version_info >= (3, 11),
-            overwrite="update",
-        )
-    except TypeError:
-        raise TypeError(
-            "Error saving {} (key {}): h5io_browser doesn't support saving elements "
-            'of type "{}" to HDF!'.format(value, h5_path, type(value))
-        ) from None
+    _write_hdf(
+        hdf_filehandle=hdf_filehandle,
+        h5_path=h5_path,
+        data=value,
+        compression=compression,
+        slash=slash,
+        use_json=use_json,
+        use_state=sys.version_info >= (3, 11),
+        overwrite="update",
+    )
 
 
 def _list_h5path(hdf: Union[h5py.File, h5py.Group]) -> Tuple[List[str], List[str]]:
