@@ -68,10 +68,12 @@ This can either be done using the edge notation, known from accessing python dic
 
 ```python
 hp["data/a_list"] = [1, 2]
-hp.write_dict(data_dict={
-    "data/an_integer_number": 3,
-    "data/sub_path/a_dictionary": {"d": 4, "e": 5},
-})
+hp.write_dict(
+    data_dict={
+        "data/an_integer_number": 3,
+        "data/sub_path/a_dictionary": {"d": 4, "e": 5},
+    }
+)
 ```
 
 ### Read Data 
