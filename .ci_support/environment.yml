@@ -3,7 +3,7 @@ channels:
 dependencies:
 - coverage
 - setuptools
-- h5io =0.2.5
+- h5io =0.2.6
 - h5py =3.16.0
 - numpy =2.5.3
 - pandas =3.0.6
