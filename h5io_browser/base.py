@@ -288,6 +288,7 @@ def _read_hdf(
             fname=hdf_filehandle,
             title=h5_path,
             slash=slash,
+            allow_pickle=True,
         ),
         error=BlockingIOError,
         msg=f"Two or more processes tried to access the file {file_name}.",
