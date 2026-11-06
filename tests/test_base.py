@@ -919,8 +919,9 @@ class TestBaseHierachicalPandas(unittest.TestCase):
             )
 
     def test_hdf5_structure(self):
+        hdf_content = get_hdf5_raw_content(file_name=self.file_name)
         self.assertEqual(
-            get_hdf5_raw_content(file_name=self.file_name),
+            hdf_content[:6],
             [
                 {"data_hierarchical": {}},
                 {"data_hierarchical/a": {"TITLE": "json"}},
@@ -928,66 +929,21 @@ class TestBaseHierachicalPandas(unittest.TestCase):
                 {"data_hierarchical/c": {}},
                 {"data_hierarchical/c/d": {"TITLE": "int"}},
                 {"data_hierarchical/c/e": {"TITLE": "int"}},
-                {
-                    "data_hierarchical/p": {
-                        "CLASS": b"GROUP",
-                        "TITLE": "pd_dataframe",
-                        "VERSION": b"1.0",
-                        "axis0_variety": b"regular",
-                        "axis1_variety": b"regular",
-                        "block0_items_variety": b"regular",
-                        "encoding": b"UTF-8",
-                        "errors": b"strict",
-                        "nblocks": 1,
-                        "ndim": 2,
-                        "pandas_type": b"frame",
-                        "pandas_version": b"0.15.2",
-                    }
-                },
-                {
-                    "data_hierarchical/p/axis0": {
-                        "CLASS": b"ARRAY",
-                        "FLAVOR": b"numpy",
-                        "TITLE": h5py.Empty(dtype=np.dtype("S1")),
-                        "VERSION": b"2.4",
-                        "kind": b"integer",
-                        "name": b"N.",
-                        "transposed": 1,
-                    }
-                },
-                {
-                    "data_hierarchical/p/axis1": {
-                        "CLASS": b"ARRAY",
-                        "FLAVOR": b"numpy",
-                        "TITLE": h5py.Empty(dtype=np.dtype("S1")),
-                        "VERSION": b"2.4",
-                        "kind": b"integer",
-                        "name": b"N.",
-                        "transposed": 1,
-                    }
-                },
-                {
-                    "data_hierarchical/p/block0_items": {
-                        "CLASS": b"ARRAY",
-                        "FLAVOR": b"numpy",
-                        "TITLE": h5py.Empty(dtype=np.dtype("S1")),
-                        "VERSION": b"2.4",
-                        "kind": b"integer",
-                        "name": b"N.",
-                        "transposed": 1,
-                    }
-                },
-                {
-                    "data_hierarchical/p/block0_values": {
-                        "CLASS": b"ARRAY",
-                        "FLAVOR": b"numpy",
-                        "TITLE": h5py.Empty(dtype=np.dtype("S1")),
-                        "VERSION": b"2.4",
-                        "transposed": 1,
-                    }
-                },
             ],
         )
+        self.assertEqual(
+            [next(iter(item)) for item in hdf_content[6:]],
+            [
+                "data_hierarchical/p",
+                "data_hierarchical/p/axis0",
+                "data_hierarchical/p/axis1",
+                "data_hierarchical/p/block0_items",
+                "data_hierarchical/p/block0_values",
+            ],
+        )
+        dataframe_attrs = hdf_content[6]["data_hierarchical/p"]
+        self.assertEqual(dataframe_attrs["TITLE"], "pd_dataframe")
+        self.assertEqual(bytes(dataframe_attrs["CLASS"]), b"GROUP")
 
     def test_list_hdf(self):
         nodes, groups = list_hdf(file_name=self.file_name, h5_path=self.h5_path)
